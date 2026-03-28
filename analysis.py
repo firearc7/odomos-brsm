@@ -42,7 +42,7 @@ _err_kw = {"errorbar": ("ci", 95)} if _sns_ver >= (0, 12) else {"ci": 95}
 # Paths
 # ──────────────────────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "BRSM data csv")
+DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 if not os.path.isdir(DATA_DIR):
