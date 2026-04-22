@@ -1,14 +1,23 @@
 """
-Movie Memory Experiment — Preliminary Data Analysis
-=====================================================
+Movie Memory Experiment — Full Data Analysis
+=============================================
 Team Odomos
 Archit Choudhary (2023114002), Bhavya Ahuja (2023111035), Hrishiraj Mitra (2023111037)
 
 Design: 2 (Boundary Type: AB vs NB; between) x 2 (Target Type: EM vs BB; within)
 DVs: Recognition Accuracy, Response Time, Confidence Rating
 
-Generates: descriptive statistics, normality checks, parametric/non-parametric
-inferential tests, and publication-quality figures.
+Hypotheses:
+  H1: NB > AB in recognition accuracy (boundary type main effect)
+  H2: BB > EM in recognition accuracy (boundary advantage; Radvansky & Zacks, 2017)
+  H3: Condition x Target Type interaction on accuracy
+  H4: Condition x Target Type interaction on RT (AB slows for BB)
+  H5: NB shows higher d' (signal detection) than AB
+  H6: Demographics (age, gender, vision) moderate recognition accuracy
+
+Analyses: descriptive statistics, normality checks, parametric/non-parametric
+tests, Signal Detection Theory, mixed-effects models with crossed random
+effects, demographic moderation, and publication-quality figures.
 """
 
 import os
@@ -24,6 +33,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pingouin as pg
 from scipy import stats
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
 
 warnings.filterwarnings("ignore")
 sns.set_theme(style="whitegrid", context="talk", palette="colorblind")
@@ -129,9 +140,11 @@ def _wcol(df):
 # 1. LOAD DATA
 # ══════════════════════════════════════════════════════════════════════════════
 print("=" * 70)
-print("MOVIE MEMORY EXPERIMENT — PRELIMINARY ANALYSIS")
+print("MOVIE MEMORY EXPERIMENT — FULL ANALYSIS")
 print("Team Odomos")
 print("=" * 70)
+
+DEMO_CSV = os.path.join(BASE_DIR, "demographic_data.csv")
 
 csv_files = (
     glob.glob(os.path.join(DATA_DIR, "sub*_recognitionstage_*.csv"))
@@ -743,71 +756,53 @@ print("  Saved fig4_accuracy_violin.png")
 # ── Figure 5: QQ Plots — already saved above ──
 
 # ── Figure 8: Task Paradigm Diagram ──
-fig, ax = plt.subplots(figsize=(14, 6))
-ax.set_xlim(0, 14)
-ax.set_ylim(0, 6)
+fig, ax = plt.subplots(figsize=(9.35, 5.8), dpi=300)
+ax.set_xlim(0, 100)
+ax.set_ylim(0, 100)
 ax.axis("off")
 
-import matplotlib.patches as mpatches
+# Title and Headers
+ax.text(50, 94, "Experimental Paradigm", ha="center", va="center", fontsize=18, fontweight="bold", color="#1e293b")
+ax.text(24, 85, "Phase 1: Encoding", ha="center", va="center", fontsize=15, fontweight="bold", color="#0284c7")
+ax.text(76, 85, "Phase 2: Recognition (2AFC)", ha="center", va="center", fontsize=15, fontweight="bold", color="#ea580c")
 
-box_kw = dict(boxstyle="round,pad=0.4", facecolor="#E8F0FE", edgecolor="#333", linewidth=1.5)
-arrow_kw = dict(arrowstyle="->,head_width=0.3,head_length=0.2", color="#333", linewidth=2)
+# Helper for drawing boxes
+def draw_box(x, y, text, border_color, fill_color, fontsize=11, style="round,pad=0.6", ha="center"):
+    bbox = dict(boxstyle=style, facecolor=fill_color, edgecolor=border_color, linewidth=1.5)
+    ax.text(x, y, text, ha=ha, va="center", fontsize=fontsize, color="#1e293b", bbox=bbox, zorder=3)
 
-# Title
-ax.text(7, 5.7, "Experimental Paradigm", ha="center", va="center", fontsize=16, fontweight="bold")
+# Encoding block
+draw_box(24, 68, "Watch 40 Movie Clips\n(Abrupt vs. Natural Boundaries)", "#3b82f6", "#eff6ff")
 
-# Phase labels
-ax.text(3.5, 5.1, "Encoding Phase", ha="center", va="center", fontsize=13, fontweight="bold", color="#2E86AB")
-ax.text(10.5, 5.1, "Recognition Phase (2AFC)", ha="center", va="center", fontsize=13, fontweight="bold", color="#E4572E")
+# Retention Delay arrow
+arrow_kw = dict(arrowstyle="-|>,head_width=0.5,head_length=0.6", color="#475569", linewidth=2.5)
+ax.annotate("", xy=(58, 68), xytext=(44, 68), arrowprops=arrow_kw, zorder=2)
+ax.text(51, 73, "Retention Delay", ha="center", va="center", fontsize=11, fontstyle="italic", color="#475569")
 
-# Encoding: Movie clip box
-ax.text(1.8, 3.8, "Watch 40\nMovie Clips", ha="center", va="center", fontsize=11,
-        bbox=dict(boxstyle="round,pad=0.5", facecolor="#D4EDDA", edgecolor="#333", linewidth=1.5))
+# Recognition blocks
+draw_box(76, 68, "Target Frame vs. Lure Frame", "#f59e0b", "#fef3c7")
+ax.annotate("", xy=(76, 56), xytext=(76, 62), arrowprops=arrow_kw, zorder=2)
 
-# Arrow to boundary
-ax.annotate("", xy=(3.5, 3.8), xytext=(2.8, 3.8), arrowprops=arrow_kw)
+draw_box(76, 46, "Target Frame Types:\n1. Event-Model (EM)\n2. Boundary-Break (BB)", "#22c55e", "#dcfce7")
+ax.annotate("", xy=(76, 33), xytext=(76, 39), arrowprops=arrow_kw, zorder=2)
 
-# Boundary box (split)
-ax.text(5.0, 4.3, "AB Group:\nAbrupt hard cuts", ha="center", va="center", fontsize=9.5,
-        bbox=dict(boxstyle="round,pad=0.35", facecolor="#FDDEDE", edgecolor="#E4572E", linewidth=1.2))
-ax.text(5.0, 3.2, "NB Group:\nSmooth transitions", ha="center", va="center", fontsize=9.5,
-        bbox=dict(boxstyle="round,pad=0.35", facecolor="#DEE8F5", edgecolor="#2E86AB", linewidth=1.2))
+draw_box(76, 26, "Confidence Rating (1-5)", "#a855f7", "#f3e8ff")
 
-# Arrow to recognition
-ax.annotate("", xy=(7.2, 3.8), xytext=(6.2, 3.8), arrowprops=arrow_kw)
-ax.text(6.7, 4.15, "delay", ha="center", va="center", fontsize=9, fontstyle="italic", color="#666")
+# Repeated Trials Loop (x 40 trials)
+loop_kw = dict(arrowstyle="-|>,head_width=0.4,head_length=0.6", color="#64748b", linewidth=2, linestyle="--")
+ax.plot([86, 94, 94], [26, 26, 68], color="#64748b", linewidth=2, linestyle="--", zorder=1)
+ax.annotate("", xy=(87, 68), xytext=(94, 68), arrowprops=loop_kw, zorder=2)
+ax.text(97, 47, "x 40 trials", ha="center", va="center", fontsize=11, fontstyle="italic", color="#64748b", rotation=270)
 
-# Recognition: 2AFC
-ax.text(8.5, 3.8, "Target vs. Lure\n(which frame\ndid you see?)", ha="center", va="center", fontsize=10.5,
-        bbox=dict(boxstyle="round,pad=0.5", facecolor="#FFF3CD", edgecolor="#333", linewidth=1.5))
+# Measured variables and Condition setup
+draw_box(4, 26, "Measured Variables (DVs):\n- Accuracy (Hit / Miss)\n- Response Time (RT)\n- Confidence Score", 
+         "#334155", "#f8fafc", style="square,pad=0.8", ha="left")
 
-# Arrow to confidence
-ax.annotate("", xy=(10.3, 3.8), xytext=(9.7, 3.8), arrowprops=arrow_kw)
-
-# Confidence
-ax.text(11.5, 3.8, "Confidence\nRating\n(1 to 5)", ha="center", va="center", fontsize=10.5,
-        bbox=dict(boxstyle="round,pad=0.5", facecolor="#F0E6FF", edgecolor="#333", linewidth=1.5))
-
-# Arrow: repeat
-ax.annotate("", xy=(8.5, 2.7), xytext=(11.5, 2.7),
-            arrowprops=dict(arrowstyle="<-", color="#999", linewidth=1.5, linestyle="--"))
-ax.text(10.0, 2.35, "x 40 trials", ha="center", va="center", fontsize=9, fontstyle="italic", color="#666")
-
-# Target types
-ax.text(8.5, 1.5, "Target Frame Types", ha="center", va="center", fontsize=11, fontweight="bold")
-ax.text(6.5, 0.8, "Event-Model (EM)\nConsistent with\nevent representation", ha="center", va="center", fontsize=9,
-        bbox=dict(boxstyle="round,pad=0.35", facecolor="#E8F5E9", edgecolor="#76B041", linewidth=1.2))
-ax.text(10.5, 0.8, "Boundary-Break (BB)\nNear an\nevent boundary", ha="center", va="center", fontsize=9,
-        bbox=dict(boxstyle="round,pad=0.35", facecolor="#FFF0E0", edgecolor="#F4A259", linewidth=1.2))
-
-# DVs
-ax.text(13.0, 3.8, "DVs:\nAccuracy\nRT\nConfidence", ha="center", va="center", fontsize=10,
-        bbox=dict(boxstyle="round,pad=0.4", facecolor="#F5F5F5", edgecolor="#333", linewidth=1.2))
-ax.annotate("", xy=(12.2, 3.8), xytext=(12.6, 3.8),
-            arrowprops=dict(arrowstyle="<-", color="#333", linewidth=1.5))
+draw_box(47, 26, "Condition Setup:\nAB Group: Abrupt hard cuts\nNB Group: Smooth transitions", 
+         "#ea580c", "#ffedd5", fontsize=10)
 
 plt.tight_layout()
-plt.savefig(os.path.join(OUTPUT_DIR, "fig8_task_paradigm.png"))
+plt.savefig(os.path.join(OUTPUT_DIR, "fig8_task_paradigm.png"), dpi=300, bbox_inches='tight')
 plt.close()
 print("  Saved fig8_task_paradigm.png")
 
@@ -859,22 +854,555 @@ plt.close()
 print("  Saved fig7_confidence_interaction.png")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 10. SAVE OUTPUTS
+# 10. SAVE OUTPUTS (original)
 # ══════════════════════════════════════════════════════════════════════════════
 subj_means.to_csv(os.path.join(OUTPUT_DIR, "subject_means.csv"), index=False)
 trials.to_csv(os.path.join(OUTPUT_DIR, "all_trials_clean.csv"), index=False)
 demographics.to_csv(os.path.join(OUTPUT_DIR, "demographics.csv"), index=False)
 
+print("\nOriginal outputs saved. Running extended analyses...")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 2b. LOAD AND MERGE EXTERNAL DEMOGRAPHIC DATA
+# ══════════════════════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("DEMOGRAPHIC DATA INTEGRATION")
+print("=" * 70)
+
+demo_ext = pd.read_csv(DEMO_CSV)
+demo_ext.columns = demo_ext.columns.str.strip()
+demo_ext = demo_ext.rename(columns={
+    "Sub ID": "sub_id_raw", "Age": "age_demo",
+    "Gender": "gender_demo", "Handedness": "hand_demo", "Vision": "vision_demo",
+})
+# Normalise subject ID: lowercase, strip spaces
+demo_ext["subject_id"] = (
+    demo_ext["sub_id_raw"].astype(str).str.strip().str.lower()
+    .str.replace(r"_[an]b$", "", regex=True)
+)
+# Deduplicate
+demo_ext = demo_ext.drop_duplicates(subset="subject_id", keep="first")
+
+# Impute missing demographics using appropriate central tendency
+# Age (continuous, slightly right-skewed) → median
+age_median = demo_ext["age_demo"].median()
+demo_ext["age_demo"] = demo_ext["age_demo"].fillna(age_median)
+# Gender, Handedness, Vision (categorical) → mode
+for col in ["gender_demo", "hand_demo", "vision_demo"]:
+    mode_val = demo_ext[col].mode().iloc[0] if len(demo_ext[col].mode()) > 0 else "Unknown"
+    demo_ext[col] = demo_ext[col].fillna(mode_val)
+
+n_imputed = demo_ext["sub_id_raw"].isna().sum()
+print(f"  Demographic CSV: {len(demo_ext)} entries")
+print(f"  Age imputed with median ({age_median:.0f}) for missing values")
+print(f"  Categorical vars imputed with mode for missing values")
+
+# Merge with trials
+trials = trials.merge(
+    demo_ext[["subject_id", "age_demo", "gender_demo", "hand_demo", "vision_demo"]],
+    on="subject_id", how="left",
+)
+# Fill any remaining NaN from subjects not in demo CSV
+trials["age_demo"] = trials["age_demo"].fillna(age_median)
+for col in ["gender_demo", "hand_demo", "vision_demo"]:
+    mode_val = trials[col].mode().iloc[0] if len(trials[col].mode()) > 0 else "Unknown"
+    trials[col] = trials[col].fillna(mode_val)
+
+# Print demographic summary
+print("\n  Demographic Summary:")
+age_vals = trials.drop_duplicates("subject_id")["age_demo"]
+print(f"    Age: M = {age_vals.mean():.1f}, SD = {age_vals.std():.1f}, "
+      f"range = {age_vals.min():.0f}-{age_vals.max():.0f}")
+gender_counts = trials.drop_duplicates("subject_id")["gender_demo"].value_counts()
+for g, c in gender_counts.items():
+    print(f"    {g}: {c}")
+hand_counts = trials.drop_duplicates("subject_id")["hand_demo"].value_counts()
+for h, c in hand_counts.items():
+    print(f"    {h}: {c}")
+vision_counts = trials.drop_duplicates("subject_id")["vision_demo"].value_counts()
+for v, c in vision_counts.items():
+    print(f"    {v}: {c}")
+
+# Also merge into subj_means
+subj_means = subj_means.merge(
+    demo_ext[["subject_id", "age_demo", "gender_demo", "hand_demo", "vision_demo"]],
+    on="subject_id", how="left",
+)
+for col in ["age_demo", "gender_demo", "hand_demo", "vision_demo"]:
+    if col == "age_demo":
+        subj_means[col] = subj_means[col].fillna(age_median)
+    else:
+        mode_val = subj_means[col].mode().iloc[0] if len(subj_means[col].mode()) > 0 else "Unknown"
+        subj_means[col] = subj_means[col].fillna(mode_val)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 11. SIGNAL DETECTION THEORY (H5)
+# ══════════════════════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("SIGNAL DETECTION THEORY (H5)")
+print("=" * 70)
+
+# Compute per-subject hit rate and false alarm rate
+# In this 2AFC task: accuracy IS the hit rate effectively.
+# For SDT in 2AFC: d' = z(HR) - z(FAR)
+# HR = P(correct | target present) = accuracy for target trials
+# FAR = P(incorrect | lure present) = 1 - accuracy
+# For 2AFC: d' = sqrt(2) * z(proportion correct) [Macmillan & Creelman, 2005]
+
+sdt_list = []
+for (sid, cond), grp in trials.groupby(["subject_id", "condition"]):
+    for tt in ["EM", "BB"]:
+        tt_trials = grp[grp["target_type"] == tt]
+        n = len(tt_trials)
+        if n == 0:
+            continue
+        n_correct = tt_trials["accuracy"].sum()
+        # Log-linear correction (Hautus, 1995): add 0.5 to hits and misses
+        hr = (n_correct + 0.5) / (n + 1)
+        far = 1 - hr
+        d_prime = stats.norm.ppf(hr) - stats.norm.ppf(far)
+        criterion_c = -0.5 * (stats.norm.ppf(hr) + stats.norm.ppf(far))
+        sdt_list.append({
+            "subject_id": sid, "condition": cond, "target_type": tt,
+            "hit_rate": hr, "false_alarm_rate": far,
+            "d_prime": d_prime, "criterion_c": criterion_c, "n_trials": n,
+        })
+
+sdt_df = pd.DataFrame(sdt_list)
+
+# Overall d' by condition
+print("\n  d' by Condition and Target Type (M ± SD):")
+sdt_desc = sdt_df.groupby(["condition", "target_type"]).agg(
+    d_M=("d_prime", "mean"), d_SD=("d_prime", "std"),
+    c_M=("criterion_c", "mean"), c_SD=("criterion_c", "std"),
+    N=("subject_id", "nunique"),
+).reset_index()
+for _, r in sdt_desc.iterrows():
+    print(f"    {r['condition']} x {r['target_type']}: "
+          f"d' = {r['d_M']:.3f} ± {r['d_SD']:.3f}, "
+          f"c = {r['c_M']:.3f} ± {r['c_SD']:.3f}")
+
+# H5: Compare d' between AB and NB (collapsed across target type)
+sdt_subj = sdt_df.groupby(["subject_id", "condition"])["d_prime"].mean().reset_index()
+ab_dp = sdt_subj[sdt_subj["condition"] == "AB"]["d_prime"]
+nb_dp = sdt_subj[sdt_subj["condition"] == "NB"]["d_prime"]
+
+print("\n  H5: d' comparison (NB > AB?)")
+# Normality check
+_, p_sw_ab = stats.shapiro(ab_dp)
+_, p_sw_nb = stats.shapiro(nb_dp)
+print(f"    Shapiro-Wilk: AB p = {p_sw_ab:.4f}, NB p = {p_sw_nb:.4f}")
+
+if p_sw_ab >= 0.05 and p_sw_nb >= 0.05:
+    t_val, p_val = stats.ttest_ind(nb_dp, ab_dp)
+    d_val = pg.compute_effsize(nb_dp, ab_dp, eftype="cohen")
+    print(f"    Independent t-test: t = {t_val:.3f}, p = {p_val:.4f}, d = {d_val:.3f}")
+else:
+    mwu = pg.mwu(nb_dp, ab_dp, alternative="two-sided")
+    pc = _pcol(mwu)
+    print(f"    Mann-Whitney U = {mwu[_ucol(mwu)].values[0]:.1f}, "
+          f"p = {mwu[pc].values[0]:.4f}, RBC = {mwu['RBC'].values[0]:.3f}")
+# Also run t-test regardless for reporting
+t_val_dp, p_val_dp = stats.ttest_ind(nb_dp, ab_dp)
+d_val_dp = pg.compute_effsize(nb_dp, ab_dp, eftype="cohen")
+print(f"    t = {t_val_dp:.3f}, p = {p_val_dp:.4f}, d = {d_val_dp:.3f}")
+print(f"    AB d' M = {ab_dp.mean():.3f}, NB d' M = {nb_dp.mean():.3f}")
+
+# Criterion c comparison
+sdt_subj_c = sdt_df.groupby(["subject_id", "condition"])["criterion_c"].mean().reset_index()
+ab_c = sdt_subj_c[sdt_subj_c["condition"] == "AB"]["criterion_c"]
+nb_c = sdt_subj_c[sdt_subj_c["condition"] == "NB"]["criterion_c"]
+t_c, p_c = stats.ttest_ind(ab_c, nb_c)
+d_c = pg.compute_effsize(ab_c, nb_c, eftype="cohen")
+print(f"\n  Criterion c: AB M = {ab_c.mean():.3f}, NB M = {nb_c.mean():.3f}")
+print(f"    t = {t_c:.3f}, p = {p_c:.4f}, d = {d_c:.3f}")
+
+# 2x2 ANOVA on d'
+sdt_both = sdt_df.copy()
+subj_check_sdt = sdt_both.groupby("subject_id")["target_type"].nunique()
+ok_sdt = subj_check_sdt[subj_check_sdt == 2].index
+sdt_both = sdt_both[sdt_both["subject_id"].isin(ok_sdt)]
+
+print("\n  2x2 Mixed ANOVA on d':")
+try:
+    aov_dp = pg.mixed_anova(
+        data=sdt_both, dv="d_prime", between="condition",
+        within="target_type", subject="subject_id",
+    )
+    aov_dp.columns = aov_dp.columns.str.replace("-", "_")
+    for _, row in aov_dp.iterrows():
+        src = row["Source"]
+        print(f"    {src}: F({int(row['DF1'])}, {int(row['DF2'])}) = {row['F']:.3f}, "
+              f"p = {row['p_unc']:.4f}, np2 = {row['np2']:.3f}")
+except Exception as e:
+    print(f"    ANOVA error: {e}")
+
+sdt_df.to_csv(os.path.join(OUTPUT_DIR, "sdt_results.csv"), index=False)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 12. MIXED-EFFECTS MODELS WITH CROSSED RANDOM EFFECTS
+# ══════════════════════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("MIXED-EFFECTS MODELS (Crossed Random Effects)")
+print("=" * 70)
+
+# Prepare trial-level data with proper coding
+me_data = trials.dropna(subset=["accuracy"]).copy()
+me_data["cond_code"] = (me_data["condition"] == "NB").astype(float)
+me_data["tt_code"] = (me_data["target_type"] == "EM").astype(float)
+me_data["cond_x_tt"] = me_data["cond_code"] * me_data["tt_code"]
+me_data["movie_id"] = me_data["movie_id"].astype(int).astype(str)
+
+for dv, dv_label in [("accuracy", "Accuracy"), ("rt", "RT"), ("conf", "Confidence")]:
+    print(f"\n── Mixed Model: {dv_label} ──")
+    dv_trials = me_data.dropna(subset=[dv]).copy()
+
+    try:
+        # Model with random intercepts for subjects (primary) and items
+        # statsmodels MixedLM: use subject as groups, add movie_id via vc_formula
+        vc = {"movie_id": "0 + C(movie_id)"}
+        model = smf.mixedlm(
+            f"{dv} ~ cond_code * tt_code",
+            data=dv_trials, groups=dv_trials["subject_id"],
+            vc_formula=vc,
+        )
+        result = model.fit(reml=True, method="lbfgs")
+        print(result.summary().tables[1].to_string())
+
+        # Extract key fixed effects
+        for param in ["cond_code", "tt_code", "cond_code:tt_code"]:
+            if param in result.params.index:
+                coef = result.params[param]
+                se = result.bse[param]
+                z = result.tvalues[param]
+                p = result.pvalues[param]
+                print(f"    {param}: b = {coef:.4f}, SE = {se:.4f}, z = {z:.3f}, p = {p:.4f}")
+
+        # Random effects variance
+        print(f"    Subject RE variance: {result.cov_re.iloc[0, 0]:.4f}")
+
+    except Exception as e:
+        print(f"    Model failed: {e}")
+        # Fallback: simpler model without crossed RE
+        try:
+            model_simple = smf.mixedlm(
+                f"{dv} ~ cond_code * tt_code",
+                data=dv_trials, groups=dv_trials["subject_id"],
+            )
+            result_simple = model_simple.fit(reml=True)
+            print("    (Fallback: subject-only random intercept)")
+            print(result_simple.summary().tables[1].to_string())
+        except Exception as e2:
+            print(f"    Fallback also failed: {e2}")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 13. RT INTERACTION DEEP-DIVE (H4)
+# ══════════════════════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("RT INTERACTION ANALYSIS (H4)")
+print("=" * 70)
+
+rt_data = anova_data.dropna(subset=["rt"]).copy()
+rt_check = rt_data.groupby("subject_id")["target_type"].nunique()
+rt_ok = rt_check[rt_check == 2].index
+rt_data = rt_data[rt_data["subject_id"].isin(rt_ok)]
+
+# Simple effects for RT
+print("\n  Simple effects — RT:")
+for cond_lbl in ["AB", "NB"]:
+    s = rt_data[rt_data["condition"] == cond_lbl]
+    em_v = s[s["target_type"] == "EM"].set_index("subject_id")["rt"]
+    bb_v = s[s["target_type"] == "BB"].set_index("subject_id")["rt"]
+    common = em_v.index.intersection(bb_v.index)
+    if len(common) > 0:
+        t_val, p_val = stats.ttest_rel(em_v[common], bb_v[common])
+        d_val = pg.compute_effsize(em_v[common], bb_v[common], paired=True, eftype="cohen")
+        print(f"    {cond_lbl}: EM (M={em_v.mean():.3f}) vs BB (M={bb_v.mean():.3f}) — "
+              f"t = {t_val:.3f}, p = {p_val:.4f}, d = {d_val:.3f}")
+
+# Between-subjects at each target type
+for tt in ["EM", "BB"]:
+    s = rt_data[rt_data["target_type"] == tt]
+    ab_v = s[s["condition"] == "AB"]["rt"]
+    nb_v = s[s["condition"] == "NB"]["rt"]
+    t_val, p_val = stats.ttest_ind(ab_v, nb_v)
+    d_val = pg.compute_effsize(ab_v, nb_v, eftype="cohen")
+    print(f"    {tt}: AB (M={ab_v.mean():.3f}) vs NB (M={nb_v.mean():.3f}) — "
+          f"t = {t_val:.3f}, p = {p_val:.4f}, d = {d_val:.3f}")
+
+# Bayesian t-test on the interaction (EM-BB difference scores)
+rt_wide = rt_data.pivot_table(index="subject_id", columns="target_type", values="rt")
+rt_diff = (rt_wide["EM"] - rt_wide["BB"]).dropna()
+cond_map_rt = rt_data.drop_duplicates("subject_id").set_index("subject_id")["condition"]
+ab_rt_diff = rt_diff[rt_diff.index.isin(cond_map_rt[cond_map_rt == "AB"].index)]
+nb_rt_diff = rt_diff[rt_diff.index.isin(cond_map_rt[cond_map_rt == "NB"].index)]
+
+print(f"\n  RT difference scores (EM - BB):")
+print(f"    AB: M = {ab_rt_diff.mean():.3f}, SD = {ab_rt_diff.std():.3f}")
+print(f"    NB: M = {nb_rt_diff.mean():.3f}, SD = {nb_rt_diff.std():.3f}")
+
+# Bayesian analysis using pingouin
+try:
+    bf_rt = pg.bayesfactor_ttest(
+        stats.ttest_ind(ab_rt_diff, nb_rt_diff)[0],
+        len(ab_rt_diff), len(nb_rt_diff),
+    )
+    print(f"    Bayes Factor (BF10): {bf_rt:.3f}")
+    if bf_rt < 1/3:
+        print("    => Moderate evidence for H0 (no interaction)")
+    elif bf_rt < 1:
+        print("    => Anecdotal evidence for H0")
+    elif bf_rt < 3:
+        print("    => Anecdotal evidence for H1 (interaction)")
+    else:
+        print("    => Moderate+ evidence for H1 (interaction)")
+except Exception as e:
+    print(f"    Bayes Factor error: {e}")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 14. DEMOGRAPHIC MODERATION ANALYSIS (H6)
+# ══════════════════════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("DEMOGRAPHIC MODERATION (H6)")
+print("=" * 70)
+
+# Per-subject overall accuracy with demographics
+subj_demo = (
+    trials.groupby(["subject_id", "condition", "age_demo", "gender_demo",
+                     "hand_demo", "vision_demo"])
+    .agg(accuracy=("accuracy", "mean"), rt=("rt", "mean"), conf=("conf", "mean"))
+    .reset_index()
+)
+
+# Correlation of age with DVs
+print("\n  Age correlations:")
+for dv in ["accuracy", "rt", "conf"]:
+    valid = subj_demo[["age_demo", dv]].dropna()
+    if len(valid) >= 3:
+        rho, p_rho = stats.spearmanr(valid["age_demo"], valid[dv])
+        print(f"    Age vs {dv}: rho = {rho:.3f}, p = {p_rho:.4f}")
+
+# Gender effect on accuracy
+print("\n  Gender effect on accuracy:")
+for g in subj_demo["gender_demo"].unique():
+    g_data = subj_demo[subj_demo["gender_demo"] == g]["accuracy"]
+    print(f"    {g}: M = {g_data.mean():.3f}, SD = {g_data.std():.3f}, N = {len(g_data)}")
+
+males = subj_demo[subj_demo["gender_demo"] == "Male"]["accuracy"]
+females = subj_demo[subj_demo["gender_demo"] == "Female"]["accuracy"]
+if len(males) >= 3 and len(females) >= 3:
+    t_g, p_g = stats.ttest_ind(males, females)
+    d_g = pg.compute_effsize(males, females, eftype="cohen")
+    print(f"    t = {t_g:.3f}, p = {p_g:.4f}, d = {d_g:.3f}")
+
+# Vision effect on accuracy
+print("\n  Vision correction effect on accuracy:")
+for v in subj_demo["vision_demo"].unique():
+    v_data = subj_demo[subj_demo["vision_demo"] == v]["accuracy"]
+    print(f"    {v}: M = {v_data.mean():.3f}, SD = {v_data.std():.3f}, N = {len(v_data)}")
+
+normal_vis = subj_demo[subj_demo["vision_demo"] == "Normal"]["accuracy"]
+corrected_vis = subj_demo[subj_demo["vision_demo"] == "Corrected to normal"]["accuracy"]
+if len(normal_vis) >= 3 and len(corrected_vis) >= 3:
+    t_v, p_v = stats.ttest_ind(normal_vis, corrected_vis)
+    d_v = pg.compute_effsize(normal_vis, corrected_vis, eftype="cohen")
+    print(f"    Normal vs Corrected: t = {t_v:.3f}, p = {p_v:.4f}, d = {d_v:.3f}")
+
+# ANCOVA: accuracy ~ condition * target_type + age + gender
+print("\n  ANCOVA (accuracy ~ condition + age_demo + gender_demo + vision_demo):")
+subj_demo["gender_code"] = (subj_demo["gender_demo"] == "Male").astype(float)
+subj_demo["vision_code"] = (subj_demo["vision_demo"] == "Corrected to normal").astype(float)
+try:
+    ancova_result = pg.ancova(
+        data=subj_demo, dv="accuracy", between="condition",
+        covar=["age_demo", "gender_code", "vision_code"],
+    )
+    print(ancova_result.to_string())
+except Exception as e:
+    print(f"    ANCOVA error: {e}")
+    # Fallback: OLS
+    try:
+        ols_model = smf.ols(
+            "accuracy ~ C(condition) + age_demo + gender_code + vision_code",
+            data=subj_demo,
+        ).fit()
+        print(ols_model.summary2().tables[1].to_string())
+    except Exception as e2:
+        print(f"    OLS error: {e2}")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 15. ADDITIONAL VISUALIZATIONS
+# ══════════════════════════════════════════════════════════════════════════════
+print("\n" + "=" * 70)
+print("ADDITIONAL FIGURES")
+print("=" * 70)
+
+# ── Figure 9: SDT d' Bar Plot ──
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+# d' by condition x target type
+sns.barplot(
+    data=sdt_df, x="target_type", y="d_prime", hue="condition",
+    hue_order=["AB", "NB"], order=["EM", "BB"],
+    palette=cond_palette, **_err_kw, **bar_kw, ax=axes[0],
+)
+axes[0].set_xlabel("Target Frame Type")
+axes[0].set_ylabel("d' (Discriminability)")
+axes[0].set_title("Signal Detection: d' by Condition and Target Type")
+axes[0].legend(title="Boundary Type")
+# criterion c
+sns.barplot(
+    data=sdt_df, x="target_type", y="criterion_c", hue="condition",
+    hue_order=["AB", "NB"], order=["EM", "BB"],
+    palette=cond_palette, **_err_kw, **bar_kw, ax=axes[1],
+)
+axes[1].set_xlabel("Target Frame Type")
+axes[1].set_ylabel("Criterion c (Response Bias)")
+axes[1].set_title("Signal Detection: Criterion c by Condition and Target Type")
+axes[1].legend(title="Boundary Type")
+axes[1].axhline(0, color="gray", linestyle="--", alpha=0.5)
+plt.tight_layout()
+plt.savefig(os.path.join(OUTPUT_DIR, "fig9_sdt_dprime.png"))
+plt.close()
+print("  Saved fig9_sdt_dprime.png")
+
+# ── Figure 10: RT Interaction Plot with Individual Data ──
+fig, ax = plt.subplots(figsize=(8, 6))
+rt_interaction = (
+    subj_means.dropna(subset=["rt"])
+    .groupby(["condition", "target_type"])
+    .agg(rt_mean=("rt", "mean"), rt_se=("rt", lambda x: x.std() / np.sqrt(len(x))))
+    .reset_index()
+)
+for cond, color, marker in [("AB", AB_COLOR, "s"), ("NB", NB_COLOR, "o")]:
+    d = rt_interaction[rt_interaction["condition"] == cond]
+    ax.errorbar(
+        d["target_type"], d["rt_mean"], yerr=d["rt_se"],
+        marker=marker, markersize=10, linewidth=2.5, capsize=5,
+        color=color, label=f"{cond} ({'Abrupt' if cond == 'AB' else 'Natural'})",
+    )
+# Overlay individual data points
+for cond, color in [("AB", AB_COLOR), ("NB", NB_COLOR)]:
+    d = subj_means[(subj_means["condition"] == cond) & subj_means["rt"].notna()]
+    x_jitter = np.where(d["target_type"] == "EM", -0.05, 0.05)
+    ax.scatter(
+        np.where(d["target_type"] == "EM", 0, 1) + x_jitter + np.random.normal(0, 0.02, len(d)),
+        d["rt"], alpha=0.15, s=15, color=color, zorder=1,
+    )
+ax.set_xlabel("Target Frame Type")
+ax.set_ylabel("Mean Response Time (s) ± SE")
+ax.set_title("RT Interaction: Boundary Type × Target Type")
+ax.legend(title="Boundary Type")
+plt.tight_layout()
+plt.savefig(os.path.join(OUTPUT_DIR, "fig10_rt_interaction.png"))
+plt.close()
+print("  Saved fig10_rt_interaction.png")
+
+# ── Figure 11: Demographic Distributions ──
+fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+# Age histogram by condition
+for cond, color in [("AB", AB_COLOR), ("NB", NB_COLOR)]:
+    d = subj_demo[subj_demo["condition"] == cond]
+    axes[0].hist(d["age_demo"], bins=12, alpha=0.6, color=color,
+                 edgecolor="black", linewidth=0.5, label=cond)
+axes[0].set_xlabel("Age (years)")
+axes[0].set_ylabel("Count")
+axes[0].set_title("Age Distribution by Condition")
+axes[0].legend()
+
+# Gender bar chart by condition
+gender_ct = subj_demo.groupby(["condition", "gender_demo"]).size().unstack(fill_value=0)
+gender_ct.plot(kind="bar", ax=axes[1], color=["#F4A259", "#76B041"], edgecolor="black")
+axes[1].set_xlabel("Condition")
+axes[1].set_ylabel("Count")
+axes[1].set_title("Gender Distribution by Condition")
+axes[1].legend(title="Gender")
+axes[1].tick_params(axis="x", rotation=0)
+
+# Vision bar chart by condition
+vision_ct = subj_demo.groupby(["condition", "vision_demo"]).size().unstack(fill_value=0)
+vision_ct.plot(kind="bar", ax=axes[2], color=["#2E86AB", "#E4572E", "#76B041"],
+               edgecolor="black")
+axes[2].set_xlabel("Condition")
+axes[2].set_ylabel("Count")
+axes[2].set_title("Vision by Condition")
+axes[2].legend(title="Vision", fontsize=8)
+axes[2].tick_params(axis="x", rotation=0)
+
+plt.tight_layout()
+plt.savefig(os.path.join(OUTPUT_DIR, "fig11_demographics.png"))
+plt.close()
+print("  Saved fig11_demographics.png")
+
+# ── Figure 12: Mixed-Effects Forest Plot (fixed effects) ──
+try:
+    me_acc = me_data.dropna(subset=["accuracy"]).copy()
+    model_acc = smf.mixedlm(
+        "accuracy ~ cond_code * tt_code",
+        data=me_acc, groups=me_acc["subject_id"],
+    )
+    result_acc = model_acc.fit(reml=True)
+
+    # Keep only fixed effects (exclude variance components)
+    keep = [p for p in result_acc.params.index if "Var" not in p and "Group" not in p]
+    params = result_acc.params[keep]
+    ci = result_acc.conf_int().loc[keep]
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    y_pos = range(len(params))
+    ax.errorbar(
+        params.values, y_pos,
+        xerr=[params.values - ci.iloc[:, 0].values, ci.iloc[:, 1].values - params.values],
+        fmt="o", color="#2E86AB", capsize=5, markersize=8,
+    )
+    ax.axvline(0, color="gray", linestyle="--", alpha=0.5)
+    ax.set_yticks(list(y_pos))
+    labels = {"Intercept": "Intercept", "cond_code": "Condition (NB)",
+              "tt_code": "Target (EM)", "cond_code:tt_code": "Interaction"}
+    ax.set_yticklabels([labels.get(p, p) for p in params.index])
+    ax.set_xlabel("Estimate (95% CI)")
+    ax.set_title("Mixed-Effects Model: Fixed Effects on Accuracy")
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUT_DIR, "fig12_mixed_effects_forest.png"))
+    plt.close()
+    print("  Saved fig12_mixed_effects_forest.png")
+except Exception as e:
+    print(f"  Forest plot error: {e}")
+
+# ── Figure 13: SDT Confidence-based ROC curves ──
+fig, ax = plt.subplots(figsize=(8, 7))
+for cond, color, marker in [("AB", AB_COLOR, "s"), ("NB", NB_COLOR, "o")]:
+    cond_trials = trials[(trials["condition"] == cond) & trials["conf"].notna()].copy()
+    # Compute cumulative HR and FAR at each confidence threshold
+    hrs, fars = [], []
+    for threshold in [5, 4, 3, 2, 1]:
+        above = cond_trials[cond_trials["conf"] >= threshold]
+        hr = above["accuracy"].mean() if len(above) > 0 else 0
+        far = 1 - hr
+        hrs.append(hr)
+        fars.append(far)
+    ax.plot(fars, hrs, marker=marker, linewidth=2, color=color,
+            label=f"{cond} ({'Abrupt' if cond == 'AB' else 'Natural'})", markersize=8)
+
+ax.plot([0, 1], [0, 1], "k--", alpha=0.3, label="Chance")
+ax.set_xlabel("False Alarm Rate")
+ax.set_ylabel("Hit Rate")
+ax.set_title("Confidence-based ROC Curves by Condition")
+ax.legend()
+ax.set_xlim(0, 1)
+ax.set_ylim(0, 1)
+plt.tight_layout()
+plt.savefig(os.path.join(OUTPUT_DIR, "fig13_roc_curves.png"))
+plt.close()
+print("  Saved fig13_roc_curves.png")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SAVE UPDATED OUTPUTS
+# ══════════════════════════════════════════════════════════════════════════════
+subj_means.to_csv(os.path.join(OUTPUT_DIR, "subject_means.csv"), index=False)
+trials.to_csv(os.path.join(OUTPUT_DIR, "all_trials_clean.csv"), index=False)
+subj_demo.to_csv(os.path.join(OUTPUT_DIR, "demographics_full.csv"), index=False)
+
 print(f"\n{'=' * 70}")
-print("OUTPUT FILES SAVED:")
+print("ALL ANALYSES COMPLETE")
 print(f"{'=' * 70}")
-for f in [
-    "descriptive_statistics.csv", "subject_means.csv",
-    "all_trials_clean.csv", "demographics.csv",
-    "fig1_accuracy_barplot.png", "fig2_rt_barplot.png",
-    "fig3_confidence_barplot.png", "fig4_accuracy_violin.png",
-    "fig5_qq_plots.png", "fig6_accuracy_histogram.png",
-    "fig7_confidence_interaction.png", "fig8_task_paradigm.png",
-]:
-    print(f"  output/{f}")
-print("\nDone!")

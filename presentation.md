@@ -1,11 +1,11 @@
 ---
-title: "Event Boundaries and Movie Memory"
-subtitle: "BRSM Report 1: Team Odomos"
+title: "Movie Memory Test: Event Boundaries and Movie Memory"
+subtitle: "BRSM Report: Team Odomos"
 author:
   - Archit Choudhary (2023114002)
   - Bhavya Ahuja (2023111035)
   - Hrishiraj Mitra (2023111037)
-date: "March 10, 2026"
+date: "April 23, 2026"
 institute: "IIIT Hyderabad"
 theme: "Madrid"
 colortheme: "dolphin"
@@ -48,100 +48,80 @@ Hello everyone. I am Archit, and I will introduce our study. Event Segmentation 
 This figure shows our experimental paradigm. In the encoding phase, participants watched 40 short movie clips. One group saw clips with abrupt hard cuts at event boundaries, while the other group saw clips with smooth, natural transitions. After a delay, all participants completed a two-alternative forced-choice recognition test with 40 trials. On each trial, they saw a target frame and a perceptually similar lure, and had to identify which frame they had actually seen. They then rated their confidence on a 1 to 5 scale. Target frames were either Event-Model frames, consistent with the ongoing event, or Boundary-Break frames, drawn from near an event boundary. We measured three dependent variables: accuracy, response time, and confidence.
 :::
 
-## Design and Participants
+## Design, Participants, and Demographics
 
 - **2 $\times$ 2 mixed design:**
   - Boundary Type (AB vs. NB) -- **between-subjects**
   - Target Frame Type (EM vs. BB) -- **within-subjects**
 - **170 participants** (81 AB, 89 NB); 1 excluded for missing data
-- 40 trials per participant (20 EM, 20 BB) = **6,800 trials total**
+- **Demographics:** Age $M$ = 22.2 ($SD$ = 2.0); 123 M, 47 F; 94 normal vision, 74 corrected
+- Missing demographics (22/185) imputed: age $\rightarrow$ **median**, categoricals $\rightarrow$ **mode**
 - **DVs:** Recognition accuracy, Response time, Confidence (1--5)
 
 ::: notes
-We used a two-by-two mixed design. Boundary type, abrupt versus natural, was manipulated between subjects. Target frame type, Event-Model versus Boundary-Break, was manipulated within subjects. Of 171 participants tested, one was excluded for missing recognition data, leaving 170 participants: 81 in the Abrupt Boundary group and 89 in the Natural Boundary group. Each participant completed 40 recognition trials, giving us 6,800 trials in total. Our three dependent variables were recognition accuracy, response time, and confidence on a 1 to 5 scale.
+We used a two-by-two mixed design. Boundary type was between-subjects and target frame type was within-subjects. We had 170 participants after excluding one for missing data. Demographic data came from an external survey. 22 participants had missing demographics, which we imputed using the median for age and the mode for categorical variables like gender and vision. The sample was mostly male, with a mean age of about 22 years.
 :::
 
-## Hypotheses
+## Six Hypotheses
 
-**H1 -- Boundary Type main effect:**
-
-- NB group will show better recognition performance than AB group
-
-**H2 -- Target Type main effect:**
-
-- EM targets will be recognized more accurately and confidently than BB targets
-
-**H3 -- Interaction:**
-
-- The EM--BB gap may be larger in the AB group (abrupt boundaries differentially impair boundary-adjacent content)
-
-\vspace{0.2cm}
 \small
-Each hypothesis tested for all three DVs: Accuracy, RT, Confidence.
+
+| | Hypothesis | Prediction |
+|:--|:-----------|:-----------|
+| H1 | Boundary Type $\rightarrow$ Accuracy | NB > AB |
+| H2 | Boundary Advantage | BB > EM (Radvansky \& Zacks, 2017) |
+| H3 | Interaction $\rightarrow$ Accuracy | Condition $\times$ Target significant |
+| H4 | RT Interaction | AB: BB slower than EM; NB: no difference |
+| H5 | Signal Detection | NB higher $d'$ than AB |
+| H6 | Demographics | Age, gender, vision moderate accuracy |
 
 ::: notes
-We had three hypotheses, each tested across all three dependent variables. Hypothesis 1: the Natural Boundary group will show better recognition performance than the Abrupt Boundary group, because natural event segmentation supports more coherent encoding. Hypothesis 2: Event-Model targets will be recognized more accurately and with greater confidence than Boundary-Break targets, because EM frames are consistent with the maintained event representation. Hypothesis 3: the advantage of EM over BB targets may be larger in the Abrupt Boundary group, because abrupt boundaries may differentially impair encoding of boundary-adjacent content. Now I will hand it over to Bhavya for the methods and accuracy results.
+We tested six hypotheses. H1 predicts NB outperforms AB. H2, based on the boundary advantage literature, predicts BB targets are recognized better than EM targets. H3 tests the accuracy interaction. H4 predicts an RT interaction where AB participants are slower for BB targets. H5 predicts NB has higher d-prime in signal detection. H6 tests whether demographics moderate performance. Now I will hand over to Bhavya.
 :::
 
 # Methods and Accuracy (Bhavya)
 
-## Data Processing and Analytical Pipeline
+## Analytical Pipeline
 
-- **171 PsychoPy CSV files** parsed in Python 3
-  - 1 excluded (sub42); Final: **170 participants, 6,800 trials**
-- Per trial: accuracy (0/1), RT (s), confidence (1--5)
+- **171 PsychoPy CSV files** parsed in Python 3; **6,800 trials** final
 - RT outliers removed: < 0.2 s or > 60 s (1 trial)
 
-\vspace{0.2cm}
+\vspace{0.15cm}
 
-**For each DV, the analysis pipeline was:**
+**Extended pipeline for each DV:**
 
 1. Descriptive statistics (means, SDs)
 2. **Normality check** (Shapiro-Wilk per cell, Levene's test)
-3. 2 $\times$ 2 mixed ANOVA ($\eta_p^2$; follow-ups with Cohen's *d*)
-4. **If normality violated** $\rightarrow$ non-parametric robustness checks
-   - Mann-Whitney U (between), Wilcoxon (within), Mann-Whitney on diffs (interaction)
+3. 2 $\times$ 2 mixed ANOVA ($\eta_p^2$; follow-ups with Cohen's $d$)
+4. Non-parametric robustness checks if normality violated
+5. **Signal Detection Theory** ($d'$, criterion $c$; log-linear correction)
+6. **Mixed-effects models** (crossed random effects: subjects $\times$ items)
+7. **Demographic moderation** (ANCOVA, correlations)
 
 ::: notes
-Hello, I am Bhavya. Let me describe our methods and analysis pipeline. We parsed 171 PsychoPy CSV files. One participant was excluded, leaving 170 participants and 6,800 trials. From each trial, we extracted accuracy, response time, and confidence. One RT trial was removed as an outlier. Critically, for each dependent variable, we followed a systematic four-step pipeline. Step one: compute descriptive statistics. Step two: check normality using Shapiro-Wilk tests on each cell of the design, plus Levene's test for variance homogeneity. Step three: run a two-by-two mixed ANOVA with partial eta-squared and follow up significant effects. Step four: if normality was violated, run non-parametric robustness checks. Mann-Whitney U for between-subjects effects, Wilcoxon signed-rank for within-subjects effects, and Mann-Whitney on difference scores for the interaction.
+Hello, I am Bhavya. Our extended pipeline now includes seven steps for each DV. Beyond the original four steps of descriptives, normality, ANOVA, and non-parametric tests, we added Signal Detection Theory with d-prime and criterion c, mixed-effects models with crossed random effects for both subjects and items, and demographic moderation analyses.
 :::
 
-## H1, H2, H3: Accuracy -- Descriptive Statistics
-
-| Condition | Target | Accuracy (*M* $\pm$ *SD*) |
-|:---------:|:------:|:-------------------------:|
-| AB | EM | .855 $\pm$ .092 |
-| AB | BB | .824 $\pm$ .105 |
-| NB | EM | .883 $\pm$ .079 |
-| NB | BB | .860 $\pm$ .096 |
-
-- All well above chance (50%)
-- **H1 pattern:** NB (*M* = .871) > AB (*M* = .840) (consistent)
-- **H2 pattern:** EM (*M* = .870) > BB (*M* = .843) (consistent)
-
-::: notes
-Now let us test our hypotheses on accuracy, starting with descriptive statistics. All accuracy values were well above the 50 percent chance level, ranging from 82 to 88 percent. Looking at the H1 pattern, the Natural Boundary group had a mean accuracy of 87.1 percent, compared to 84.0 percent for the Abrupt Boundary group. That is consistent with H1. For H2, Event-Model targets were recognized at 87.0 percent versus 84.3 percent for Boundary-Break targets. That is consistent with H2 as well.
-:::
-
-## Accuracy -- Normality Check and Inferential Tests
+## H1, H2: Accuracy Results
 
 \begin{columns}
 \begin{column}{0.52\textwidth}
-\textbf{Normality:} Violated in all 4 cells (\textit{p} < .002) \\
-Levene's: variance homogeneity OK (\textit{p} > .08)
-
-\vspace{0.15cm}
-\textbf{Parametric (mixed ANOVA):}
+\textbf{H1 (NB > AB): Supported}
 \begin{itemize}
-  \item H1: \textit{F}(1, 168) = 7.25, \textit{p} = .008, $\eta_p^2$ = .041 (supported)
-  \item H2: \textit{F}(1, 168) = 11.44, \textit{p} < .001, $\eta_p^2$ = .064 (supported)
-  \item H3: \textit{F}(1, 168) = 0.21, \textit{p} = .651 (n.s.)
+  \item \textit{F}(1, 168) = 7.25, \textit{p} = .008, $\eta_p^2$ = .041
+  \item NB (\textit{M} = .871) > AB (\textit{M} = .840), \textit{d} = 0.41
 \end{itemize}
-\textbf{Non-parametric (normality violated):}
+\vspace{0.15cm}
+\textbf{H2 (BB > EM): Not Supported}
 \begin{itemize}
-  \item H1: Mann-Whitney \textit{U} = 2744, \textit{p} = .007 (supported)
-  \item H2: Wilcoxon \textit{W} = 3135, \textit{p} = .003 (supported)
-  \item H3: \textit{U} = 3644, \textit{p} = .904 (n.s.)
+  \item \textit{F}(1, 168) = 11.44, \textit{p} < .001, $\eta_p^2$ = .064
+  \item But EM (\textit{M} = .870) > BB (\textit{M} = .843)
+  \item Direction \textbf{opposite} to boundary advantage prediction
+\end{itemize}
+\vspace{0.15cm}
+\textbf{H3 (Interaction): Not Supported}
+\begin{itemize}
+  \item \textit{F}(1, 168) = 0.21, \textit{p} = .651
 \end{itemize}
 \end{column}
 \begin{column}{0.45\textwidth}
@@ -150,157 +130,209 @@ Levene's: variance homogeneity OK (\textit{p} > .08)
 \end{columns}
 
 ::: notes
-Before running inferential tests, we checked normality. Shapiro-Wilk tests showed normality was violated in all four cells, with all p-values below point-zero-zero-two. Levene's test confirmed homogeneity of variance. Because normality was violated, we ran both parametric and non-parametric tests. The parametric mixed ANOVA showed that H1 was supported: boundary type was significant with F of 7.25 and p equals point-zero-zero-eight. H2 was also supported: target type was significant with F of 11.44 and p less than point-zero-zero-one. H3 was not supported for accuracy: the interaction was not significant. The non-parametric robustness checks confirmed all these results: Mann-Whitney confirmed H1, Wilcoxon confirmed H2, and the interaction remained non-significant.
+For accuracy, H1 was supported: NB outperformed AB with a medium effect size of 0.41. H2 was NOT supported: we predicted a boundary advantage with BB exceeding EM, but the data showed the opposite. EM targets were recognized significantly better than BB targets. This means the boundary advantage described by Radvansky and Zacks does not hold when boundaries are artificially disrupted. H3, the interaction, was not significant. Non-parametric tests confirmed all results.
 :::
 
-## Accuracy -- Effect Sizes
-
-- **H1: NB > AB**, *d* = 0.41 (medium effect)
-  - NB (*M* = .871) vs. AB (*M* = .840)
-- **H2: EM > BB**, *d* = 0.29 (small--medium effect)
-  - EM (*M* = .870) vs. BB (*M* = .843)
-- **H3: No interaction** (*p* = .651)
-  - The EM--BB advantage is similar in both groups
-
-\vspace{0.2cm}
-
-$\rightarrow$ Natural boundaries help memory; EM frames help memory; effects are additive.
-
-Now Hrishiraj will present the RT and confidence results.
-
-::: notes
-Let me summarize the effect sizes. For H1, the Natural Boundary group outperformed the Abrupt Boundary group with Cohen's d of 0.41, a medium effect. For H2, Event-Model targets were recognized better than Boundary-Break targets with d of 0.29, a small to medium effect. For H3, there was no interaction, meaning the EM-BB advantage is similar in both groups. So the effects of boundary type and target type on accuracy are additive. Natural boundaries help memory, and Event-Model frames are easier to recognize, independently of each other. Now I will hand over to Hrishiraj for the response time and confidence results.
-:::
-
-# RT, Confidence, and Conclusion (Hrishiraj)
-
-## H1, H2, H3: Response Time
+## H5: Signal Detection Theory
 
 \begin{columns}
-\begin{column}{0.52\textwidth}
-\textbf{Normality:} Violated in all 4 cells (\textit{p} < .002) \\
-Levene's: OK (\textit{p} > .08)
-
-\vspace{0.15cm}
-\textbf{Descriptive:} RT = 5.45 -- 5.83 s; small differences.
-
-\vspace{0.15cm}
-\textbf{Parametric ANOVA:}
+\begin{column}{0.48\textwidth}
+\textbf{d' (Discriminability):}
 \begin{itemize}
-  \item H1: \textit{F}(1, 168) = 1.10, \textit{p} = .296 -- n.s.
-  \item H2: \textit{F}(1, 168) = 1.16, \textit{p} = .284 -- n.s.
-  \item H3: \textit{F}(1, 168) = 3.36, \textit{p} = .069, $\eta_p^2$ = .020
+  \item NB d' = 2.26 > AB d' = 2.01
+  \item \textit{t} = 2.55, \textit{p} = .012, \textit{d} = 0.39
+  \item \textbf{H5 supported}
 \end{itemize}
-\textbf{Non-parametric:} All n.s. (\textit{p} > .09)
-
-\vspace{0.1cm}
-Near-significant interaction warrants future investigation.
+\vspace{0.15cm}
+\textbf{Criterion c (Response Bias):}
+\begin{itemize}
+  \item No group difference (\textit{p} = .296)
+  \item NB advantage is \textbf{genuine discriminability}
+\end{itemize}
+\vspace{0.15cm}
+\textbf{ANOVA on d':}
+\begin{itemize}
+  \item Condition: \textit{F} = 6.48, \textit{p} = .012
+  \item Target: \textit{F} = 8.20, \textit{p} = .005
+\end{itemize}
 \end{column}
-\begin{column}{0.45\textwidth}
-\includegraphics[width=\textwidth]{output/fig2_rt_barplot.png}
+\begin{column}{0.48\textwidth}
+\includegraphics[width=\textwidth]{output/fig9_sdt_dprime.png}
 \end{column}
 \end{columns}
 
 ::: notes
-Hello, I am Hrishiraj. I will present the response time and confidence results, followed by our conclusions. Starting with response time. Normality was violated in all four cells, so we report both parametric and non-parametric tests. Response times ranged from 5.45 to 5.83 seconds with small differences between conditions. None of the three hypotheses were supported for RT. H1, boundary type, was not significant. H2, target type, was not significant. H3, the interaction, approached significance with p of point-zero-six-nine, which is worth noting for future investigation. Non-parametric tests converged: all non-significant.
+Signal Detection Theory confirmed that the NB advantage reflects genuine discriminability. NB participants had d-prime of 2.26 compared to 2.01 for AB, a significant difference. Critically, response criterion c did not differ, ruling out response bias. The ANOVA on d-prime mirrored the accuracy ANOVA, confirming both condition and target type effects.
 :::
 
-## H1, H2, H3: Confidence -- Descriptive + Normality
-
-| Condition | Target | Confidence (*M* $\pm$ *SD*) |
-|:---------:|:------:|:---------------------------:|
-| AB | EM | 4.13 $\pm$ .46 |
-| AB | BB | 4.04 $\pm$ .49 |
-| NB | EM | 4.21 $\pm$ .44 |
-| NB | BB | 4.20 $\pm$ .42 |
-
-- **H2 pattern:** EM > BB within AB, but **not within NB** (possible interaction)
-- **Normality:** 3 cells normal; NB $\times$ EM violated (*p* = .004)
-- Levene's: variance homogeneity OK
-
-::: notes
-Now for confidence ratings, our most interesting finding. Looking at the descriptive statistics, within the Abrupt Boundary group, EM targets had a mean confidence of 4.13 compared to 4.04 for BB targets, a clear difference. But within the Natural Boundary group, EM was 4.21 and BB was 4.20, virtually no difference at all. This already suggests a possible interaction. For normality, three of four cells were normal, but the NB by EM cell was non-normal with p of point-zero-zero-four. So we will report non-parametric checks alongside the ANOVA.
-:::
-
-## H1, H2, H3: Confidence -- Inferential Tests
+## Mixed-Effects Models
 
 \begin{columns}
-\begin{column}{0.52\textwidth}
-\textbf{Parametric ANOVA:}
+\begin{column}{0.50\textwidth}
+\textbf{Crossed random effects (subjects $\times$ items):}
+\vspace{0.1cm}
+
+\textbf{Accuracy:}
 \begin{itemize}
-  \item H1: \textit{F}(1, 168) = 3.24, \textit{p} = .074 -- n.s.
-  \item H2: \textit{F}(1, 168) = 5.70, \textit{p} = .018, $\eta_p^2$ = .033 (supported)
-  \item \textbf{H3: \textit{F}(1, 168) = 4.03, \textit{p} = .046, $\eta_p^2$ = .023} (supported)
+  \item Condition: \textit{b} = .036, \textit{z} = 2.95, \textit{p} = .003
+  \item Target: \textit{b} = .031, \textit{z} = 2.51, \textit{p} = .012
+  \item Interaction: n.s. (\textit{p} = .669)
 \end{itemize}
-\textbf{Simple effects (H3):}
+\vspace{0.1cm}
+\textbf{Confidence:}
 \begin{itemize}
-  \item AB: EM > BB (\textit{p} = .003, \textit{d} = .19)
-  \item NB: EM $\approx$ BB (\textit{p} = .733) -- no difference
-  \item BB: NB > AB (\textit{p} = .024, \textit{d} = .35)
+  \item Condition: \textit{b} = .161, \textit{z} = 6.89, \textit{p} < .001
+  \item Target: \textit{b} = .091, \textit{z} = 2.89, \textit{p} = .004
 \end{itemize}
-\textbf{Non-parametric:} Wilcoxon confirmed H2 (\textit{p} = .025). Mann-Whitney confirmed H3 (\textit{p} = .025).
+\vspace{0.1cm}
+$\Rightarrow$ Results robust to item-level variability
 \end{column}
-\begin{column}{0.45\textwidth}
+\begin{column}{0.47\textwidth}
+\includegraphics[width=\textwidth]{output/fig12_mixed_effects_forest.png}
+\end{column}
+\end{columns}
+
+::: notes
+We fitted mixed-effects models with crossed random intercepts for subjects and items to account for the fact that some movies may be inherently easier or harder. The results confirmed our ANOVA findings. The condition effect on accuracy was b equals 0.036, significant at p equals point-zero-zero-three. The target type effect was also significant. Item-level variance was captured, validating this approach.
+:::
+
+# RT, Confidence, Demographics, and Conclusion (Hrishiraj)
+
+## H4: RT Interaction
+
+\begin{columns}
+\begin{column}{0.50\textwidth}
+\textbf{Omnibus:} \textit{F}(1, 168) = 3.36, \textit{p} = .069
+
+\vspace{0.15cm}
+\textbf{Simple effects:}
+\begin{itemize}
+  \item AB: EM (5.45 s) vs BB (5.66 s)
+  \item \textit{t} = --2.56, \textit{p} = .012, \textit{d} = --0.15
+  \item NB: EM vs BB -- n.s. (\textit{p} = .673)
+\end{itemize}
+\vspace{0.15cm}
+\textbf{Bayesian analysis:}
+\begin{itemize}
+  \item BF$_{10}$ = 0.78 (anecdotal for H0)
+  \item Suggestive but inconclusive
+\end{itemize}
+\vspace{0.1cm}
+$\Rightarrow$ \textbf{H4 partially supported}
+\end{column}
+\begin{column}{0.47\textwidth}
+\includegraphics[width=\textwidth]{output/fig10_rt_interaction.png}
+\end{column}
+\end{columns}
+
+::: notes
+Hello, I am Hrishiraj. The RT interaction was marginally significant at p equals point-zero-six-nine. But simple effects were clear: within the AB group, BB targets were responded to significantly slower than EM targets, while the NB group showed no difference. A Bayesian analysis yielded a Bayes Factor of 0.78, providing anecdotal evidence for the null. So H4 is partially supported — the pattern is there but needs replication.
+:::
+
+## Confidence Interaction and Dissociation
+
+\begin{columns}
+\begin{column}{0.50\textwidth}
+\textbf{Confidence ANOVA:}
+\begin{itemize}
+  \item Target Type: \textit{p} = .018, $\eta_p^2$ = .033
+  \item \textbf{Interaction: \textit{p} = .046, $\eta_p^2$ = .023}
+\end{itemize}
+\vspace{0.1cm}
+\textbf{Simple effects:}
+\begin{itemize}
+  \item AB: EM > BB (\textit{p} = .003)
+  \item NB: EM $\approx$ BB (\textit{p} = .733)
+  \item BB: NB > AB (\textit{p} = .024)
+\end{itemize}
+\vspace{0.1cm}
+\textbf{Key insight:}
+
+Abrupt boundaries impair \textbf{metacognitive certainty} for BB targets without proportionally reducing accuracy.
+\end{column}
+\begin{column}{0.47\textwidth}
 \includegraphics[width=\textwidth]{output/fig7_confidence_interaction.png}
 \end{column}
 \end{columns}
 
 ::: notes
-The mixed ANOVA on confidence revealed the following. H1 was not significant for confidence, with p of point-zero-seven-four. H2 was significant: EM targets received higher confidence than BB targets, with p of point-zero-one-eight. Most importantly, H3 was supported: there was a significant interaction with p of point-zero-four-six. Looking at simple effects, within the Abrupt Boundary group, confidence was significantly higher for EM than BB targets with d of 0.19. But within the Natural Boundary group, there was no difference at all. For BB targets specifically, the Natural Boundary group was more confident than the Abrupt Boundary group with d of 0.35. Non-parametric Wilcoxon confirmed H2, and Mann-Whitney confirmed H3, including the simple effects pattern.
+The confidence analysis revealed our most striking finding. The interaction was significant: within the AB group, participants were significantly less confident about BB targets compared to EM targets. But the NB group showed no confidence difference at all. This dissociation between accuracy and confidence means abrupt boundaries selectively impair metacognitive certainty for boundary-adjacent content.
 :::
 
-## Key Finding: Accuracy vs. Confidence Dissociation
+## H6: Demographic Moderation
+
+\begin{columns}
+\begin{column}{0.55\textwidth}
+\textbf{Age:} Negative correlation with accuracy
+
+$\rho$ = --0.203, \textit{p} = .008
+
+\vspace{0.15cm}
+\textbf{Gender:} Marginal female advantage
+
+Females (\textit{M} = .875) vs Males (\textit{M} = .849), \textit{p} = .053
+
+\vspace{0.15cm}
+\textbf{Vision:} No effect (\textit{p} = .749)
+
+\vspace{0.15cm}
+\textbf{ANCOVA:} Condition effect \textbf{survives} covariate adjustment
+
+\textit{F} = 8.38, \textit{p} = .004, $\eta_p^2$ = .048
+
+\vspace{0.1cm}
+$\Rightarrow$ \textbf{H6 partially supported} (age effect)
+\end{column}
+\begin{column}{0.42\textwidth}
+\includegraphics[width=\textwidth]{output/fig11_demographics.png}
+\end{column}
+\end{columns}
+
+::: notes
+For demographic moderation, age was significantly negatively correlated with accuracy, even in this narrow young-adult range. Females showed a marginal advantage. Vision correction had no effect. Importantly, the ANCOVA showed that the condition effect on accuracy survives after controlling for all demographics, confirming the robustness of our main finding.
+:::
+
+## Summary of Results
+
+\small
+
+| Hypothesis | Prediction | Result | Support |
+|:-----------|:-----------|:-------|:-------:|
+| H1 (Boundary $\rightarrow$ Acc) | NB > AB | NB > AB, $d$ = 0.41 | **Yes** |
+| H2 (Boundary advantage) | BB > EM | EM > BB (reversed) | **No** |
+| H3 (Acc Interaction) | Significant | $p$ = .651 | **No** |
+| H4 (RT Interaction) | AB: BB slower | AB: $p$ = .012; NB: n.s. | **Partial** |
+| H5 (SDT $d'$) | NB > AB | NB > AB, $d$ = 0.39 | **Yes** |
+| H6 (Demographics) | Moderation | Age: $p$ = .008 | **Partial** |
+
+\vspace{0.15cm}
+
+All primary conclusions robust to non-parametric testing and mixed-effects modelling.
+
+::: notes
+Here is the summary. H1 and H5 were fully supported: natural boundaries preserve memory. H2, the boundary advantage, was rejected: EM targets were actually better, not BB. H4 was partially supported with clear simple effects but a marginal omnibus test. H6 showed age effects but no moderation of the main finding.
+:::
+
+## Conclusion and Future Directions
+
+**Key findings:**
+
+1. Natural boundaries facilitate encoding (accuracy *and* $d'$)
+2. Boundary advantage fails when boundaries are artificially disrupted
+3. Abrupt cuts impair metacognitive certainty (confidence interaction)
+4. Results robust across ANOVA, SDT, mixed-effects, and non-parametric tests
 
 \vspace{0.2cm}
 
-| | H1 (Boundary) | H2 (Target) | H3 (Interaction) |
-|:---|:---:|:---:|:---:|
-| **Accuracy** | Significant | Significant | **Not significant** |
-| **Confidence** | Not significant | Significant | **Significant** |
+**Future directions:**
 
-\vspace{0.2cm}
-
-- Accuracy: both main effects, **no interaction** (effects are additive)
-- Confidence: **significant interaction** (effects are not additive)
-- AB group is less confident about BB targets, but NB group is equally confident
-- Abrupt boundaries **selectively impair metacognitive certainty** for boundary-adjacent content
+- Yes/no recognition paradigm for richer SDT analysis
+- Model item-level predictors (boundary salience, lure similarity)
+- Replicate RT interaction with larger sample
+- Within-subjects boundary manipulation
 
 ::: notes
-The key finding of our study is the dissociation between accuracy and confidence. Look at this table. For accuracy, both H1 and H2 were significant, but H3, the interaction, was not. The effects of boundary type and target type on accuracy are additive. But for confidence, H2 and H3 were significant, meaning the interaction was present. This means that abrupt boundaries selectively impair metacognitive certainty for boundary-adjacent content. The Abrupt Boundary group recognized BB frames almost as well as EM frames, but they were significantly less confident about those BB judgments. The Natural Boundary group showed stable confidence regardless of frame type. This is something that accuracy alone would not reveal.
-:::
-
-## Correlations and Summary
-
-**Spearman correlations (between DVs):**
-
-- Accuracy--Confidence: $\rho$ = 0.360, *p* < .0001 (metacognitive calibration)
-- RT--Confidence: $\rho$ = --0.152, *p* = .047 (faster = more confident)
-- Accuracy--RT: $\rho$ = --0.054, *p* = .487 (no speed--accuracy tradeoff)
-
-\vspace{0.2cm}
-
-**Summary of hypothesis tests:**
-
-- **H1 supported** for accuracy (*d* = 0.41); NB > AB
-- **H2 supported** for accuracy (*d* = 0.29) and confidence (*d* = 0.11); EM > BB
-- **H3 supported** for confidence only: AB group less confident about BB targets
-- All conclusions robust to non-parametric testing
-
-::: notes
-We also examined Spearman correlations. Accuracy and confidence were positively correlated, indicating reasonable metacognitive calibration. RT and confidence were weakly negatively correlated. Accuracy and RT were not correlated, ruling out a speed-accuracy tradeoff. To summarize our hypothesis tests: H1 was supported for accuracy with a medium effect size. H2 was supported for both accuracy and confidence. H3, the interaction, was supported for confidence but not accuracy, revealing the dissociation between what people get right and how certain they feel about it. All conclusions were robust to non-parametric testing, giving us confidence despite the normality violations.
-:::
-
-## Limitations and Future Directions
-
-- No demographic data captured (no individual difference analyses)
-- Item-level variability not modelled
-  - Future: mixed-effects models with crossed random effects
-- Signal Detection Theory (*d'*, criterion *c*) could add nuance
-- Near-significant RT interaction (*p* = .069) warrants follow-up
-- **All non-parametric tests confirmed parametric conclusions**
-
-::: notes
-We should note some limitations. Demographic information was not captured, preventing individual difference analyses. Item-level variability was not modelled. Future work could use mixed-effects models. Signal Detection Theory measures would add nuance. The near-significant RT interaction deserves follow-up with a larger sample. On the positive side, all non-parametric robustness checks fully confirmed our parametric conclusions, giving us strong confidence in every result we reported.
+In conclusion, natural event boundaries facilitate both memory encoding and signal detection. The boundary advantage does not hold when boundaries are artificially disrupted. And abrupt cuts create a unique dissociation between accuracy and confidence. These findings were confirmed across multiple analytical methods. Future work should use a yes-no paradigm for SDT, model item predictors, and replicate the RT interaction.
 :::
 
 ## Thank You
@@ -325,12 +357,12 @@ Thank you for your attention. We are happy to take any questions.
 
 \small
 
-- Swallow, K. M., Zacks, J. M., \& Abrams, R. A. (2009). Event boundaries in perception affect memory encoding and updating. *Journal of Experimental Psychology: General*, *138*(2), 236--257.
-
-- Zacks, J. M., \& Swallow, K. M. (2007). Event segmentation. *Current Directions in Psychological Science*, *16*(2), 80--84.
-
-- Zacks, J. M., Speer, N. K., Swallow, K. M., Braver, T. S., \& Reynolds, J. R. (2007). Event perception: A mind--brain perspective. *Psychological Bulletin*, *133*(2), 273--293.
+- Boltz, M. (1992). Temporal accent structure and the remembering of filmed narratives. *JEPHPP*, *18*(1), 90--105.
+- Hautus, M. J. (1995). Corrections for extreme proportions. *BRMIC*, *27*(1), 46--51.
+- Radvansky, G. A., \& Zacks, J. M. (2017). Event boundaries in memory and cognition. *COBS*, *17*, 133--140.
+- Swallow, K. M., Zacks, J. M., \& Abrams, R. A. (2009). Event boundaries affect memory encoding. *JEP:G*, *138*(2), 236--257.
+- Zacks, J. M., et al. (2007). Event perception: A mind--brain perspective. *Psych. Bull.*, *133*(2), 273--293.
 
 ::: notes
-These are the references for our study.
+These are our references.
 :::
