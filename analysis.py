@@ -685,23 +685,39 @@ cond_palette = {"AB": AB_COLOR, "NB": NB_COLOR}
 tt_palette = {"EM": "#76B041", "BB": "#F4A259"}
 bar_kw = dict(capsize=0.1, errwidth=1.5, edgecolor="black", linewidth=0.8)
 
-# ── Figure 1: Accuracy Bar Plot ──
+# ── Figure 1: Accuracy Interaction Plot (with individual data) ──
 fig, ax = plt.subplots(figsize=(8, 6))
-sns.barplot(
-    data=subj_means, x="target_type", y="accuracy", hue="condition",
-    hue_order=["AB", "NB"], order=["EM", "BB"],
-    palette=cond_palette, **_err_kw, **bar_kw, ax=ax,
+acc_interaction = (
+    subj_means.dropna(subset=["accuracy"])
+    .groupby(["condition", "target_type"])
+    .agg(acc_mean=("accuracy", "mean"), acc_se=("accuracy", lambda x: x.std() / np.sqrt(len(x))))
+    .reset_index()
 )
+for cond, color, marker in [("AB", AB_COLOR, "s"), ("NB", NB_COLOR, "o")]:
+    d = acc_interaction[acc_interaction["condition"] == cond]
+    ax.errorbar(
+        d["target_type"], d["acc_mean"], yerr=d["acc_se"],
+        marker=marker, markersize=10, linewidth=2.5, capsize=5,
+        color=color, label=f"{cond} ({'Abrupt' if cond == 'AB' else 'Natural'})",
+    )
+# Overlay individual data points
+for cond, color in [("AB", AB_COLOR), ("NB", NB_COLOR)]:
+    d = subj_means[(subj_means["condition"] == cond) & subj_means["accuracy"].notna()]
+    x_jitter = np.where(d["target_type"] == "EM", -0.05, 0.05)
+    ax.scatter(
+        np.where(d["target_type"] == "EM", 0, 1) + x_jitter + np.random.normal(0, 0.02, len(d)),
+        d["accuracy"], alpha=0.15, s=15, color=color, zorder=1,
+    )
 ax.set_xlabel("Target Frame Type")
-ax.set_ylabel("Mean Recognition Accuracy")
-ax.set_title("Recognition Accuracy by Condition and Target Type")
-ax.set_ylim(0.5, 1.0)
+ax.set_ylabel("Mean Recognition Accuracy (± SE)")
+ax.set_title("Accuracy Interaction: Boundary Type × Target Type")
 ax.axhline(0.5, color="gray", linestyle="--", alpha=0.5, label="Chance (50%)")
+ax.set_ylim(0.4, 1.0)
 ax.legend(title="Boundary Type")
 plt.tight_layout()
-plt.savefig(os.path.join(OUTPUT_DIR, "fig1_accuracy_barplot.png"))
+plt.savefig(os.path.join(OUTPUT_DIR, "fig1_accuracy_interaction.png"))
 plt.close()
-print("  Saved fig1_accuracy_barplot.png")
+print("  Saved fig1_accuracy_interaction.png")
 
 # ── Figure 2: RT Bar Plot ──
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -962,11 +978,11 @@ for (sid, cond), grp in trials.groupby(["subject_id", "condition"]):
         hr = (n_correct + 0.5) / (n + 1)
         far = 1 - hr
         d_prime = stats.norm.ppf(hr) - stats.norm.ppf(far)
-        criterion_c = -0.5 * (stats.norm.ppf(hr) + stats.norm.ppf(far))
+        # Note: criterion c is not meaningful in 2AFC (always ~0 by design)
         sdt_list.append({
             "subject_id": sid, "condition": cond, "target_type": tt,
             "hit_rate": hr, "false_alarm_rate": far,
-            "d_prime": d_prime, "criterion_c": criterion_c, "n_trials": n,
+            "d_prime": d_prime, "n_trials": n,
         })
 
 sdt_df = pd.DataFrame(sdt_list)
@@ -975,13 +991,11 @@ sdt_df = pd.DataFrame(sdt_list)
 print("\n  d' by Condition and Target Type (M ± SD):")
 sdt_desc = sdt_df.groupby(["condition", "target_type"]).agg(
     d_M=("d_prime", "mean"), d_SD=("d_prime", "std"),
-    c_M=("criterion_c", "mean"), c_SD=("criterion_c", "std"),
     N=("subject_id", "nunique"),
 ).reset_index()
 for _, r in sdt_desc.iterrows():
     print(f"    {r['condition']} x {r['target_type']}: "
-          f"d' = {r['d_M']:.3f} ± {r['d_SD']:.3f}, "
-          f"c = {r['c_M']:.3f} ± {r['c_SD']:.3f}")
+          f"d' = {r['d_M']:.3f} ± {r['d_SD']:.3f}")
 
 # H5: Compare d' between AB and NB (collapsed across target type)
 sdt_subj = sdt_df.groupby(["subject_id", "condition"])["d_prime"].mean().reset_index()
@@ -1009,14 +1023,8 @@ d_val_dp = pg.compute_effsize(nb_dp, ab_dp, eftype="cohen")
 print(f"    t = {t_val_dp:.3f}, p = {p_val_dp:.4f}, d = {d_val_dp:.3f}")
 print(f"    AB d' M = {ab_dp.mean():.3f}, NB d' M = {nb_dp.mean():.3f}")
 
-# Criterion c comparison
-sdt_subj_c = sdt_df.groupby(["subject_id", "condition"])["criterion_c"].mean().reset_index()
-ab_c = sdt_subj_c[sdt_subj_c["condition"] == "AB"]["criterion_c"]
-nb_c = sdt_subj_c[sdt_subj_c["condition"] == "NB"]["criterion_c"]
-t_c, p_c = stats.ttest_ind(ab_c, nb_c)
-d_c = pg.compute_effsize(ab_c, nb_c, eftype="cohen")
-print(f"\n  Criterion c: AB M = {ab_c.mean():.3f}, NB M = {nb_c.mean():.3f}")
-print(f"    t = {t_c:.3f}, p = {p_c:.4f}, d = {d_c:.3f}")
+# Note: Criterion c is not reported — in 2AFC, response bias is undefined
+# (participants must choose one of two options, so c ≈ 0 by construction).
 
 # 2x2 ANOVA on d'
 sdt_both = sdt_df.copy()
@@ -1239,28 +1247,18 @@ print("ADDITIONAL FIGURES")
 print("=" * 70)
 
 # ── Figure 9: SDT d' Bar Plot ──
-fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+fig, ax = plt.subplots(figsize=(8, 6))
 # d' by condition x target type
 sns.barplot(
     data=sdt_df, x="target_type", y="d_prime", hue="condition",
     hue_order=["AB", "NB"], order=["EM", "BB"],
-    palette=cond_palette, **_err_kw, **bar_kw, ax=axes[0],
+    palette=cond_palette, **_err_kw, **bar_kw, ax=ax,
 )
-axes[0].set_xlabel("Target Frame Type")
-axes[0].set_ylabel("d' (Discriminability)")
-axes[0].set_title("Signal Detection: d' by Condition and Target Type")
-axes[0].legend(title="Boundary Type")
-# criterion c
-sns.barplot(
-    data=sdt_df, x="target_type", y="criterion_c", hue="condition",
-    hue_order=["AB", "NB"], order=["EM", "BB"],
-    palette=cond_palette, **_err_kw, **bar_kw, ax=axes[1],
-)
-axes[1].set_xlabel("Target Frame Type")
-axes[1].set_ylabel("Criterion c (Response Bias)")
-axes[1].set_title("Signal Detection: Criterion c by Condition and Target Type")
-axes[1].legend(title="Boundary Type")
-axes[1].axhline(0, color="gray", linestyle="--", alpha=0.5)
+ax.set_xlabel("Target Frame Type")
+ax.set_ylabel("d' (Discriminability)")
+ax.set_title("Signal Detection: d' by Condition and Target Type")
+ax.legend(title="Boundary Type")
+# Note: Criterion c is not plotted — undefined in 2AFC (always ~0)
 plt.tight_layout()
 plt.savefig(os.path.join(OUTPUT_DIR, "fig9_sdt_dprime.png"))
 plt.close()
@@ -1369,32 +1367,62 @@ try:
 except Exception as e:
     print(f"  Forest plot error: {e}")
 
-# ── Figure 13: SDT Confidence-based ROC curves ──
-fig, ax = plt.subplots(figsize=(8, 7))
+# ── Figure 13: Confidence Calibration Plot ──
+# Shows accuracy at each confidence level — are participants well-calibrated?
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+# Panel 1: By Condition
+ax = axes[0]
 for cond, color, marker in [("AB", AB_COLOR, "s"), ("NB", NB_COLOR, "o")]:
     cond_trials = trials[(trials["condition"] == cond) & trials["conf"].notna()].copy()
-    # Compute cumulative HR and FAR at each confidence threshold
-    hrs, fars = [], []
-    for threshold in [5, 4, 3, 2, 1]:
-        above = cond_trials[cond_trials["conf"] >= threshold]
-        hr = above["accuracy"].mean() if len(above) > 0 else 0
-        far = 1 - hr
-        hrs.append(hr)
-        fars.append(far)
-    ax.plot(fars, hrs, marker=marker, linewidth=2, color=color,
-            label=f"{cond} ({'Abrupt' if cond == 'AB' else 'Natural'})", markersize=8)
+    conf_levels = sorted(cond_trials["conf"].dropna().unique())
+    acc_means, acc_ses, counts = [], [], []
+    for cl in conf_levels:
+        subset = cond_trials[cond_trials["conf"] == cl]
+        acc_means.append(subset["accuracy"].mean())
+        acc_ses.append(subset["accuracy"].std() / np.sqrt(len(subset)) if len(subset) > 1 else 0)
+        counts.append(len(subset))
+    ax.errorbar(
+        conf_levels, acc_means, yerr=acc_ses,
+        marker=marker, markersize=9, linewidth=2, capsize=4,
+        color=color, label=f"{cond} ({'Abrupt' if cond == 'AB' else 'Natural'})",
+    )
+    # Annotate counts
+    for cl, cnt in zip(conf_levels, counts):
+        ax.annotate(f"n={cnt}", (cl, 0.48), fontsize=7, ha="center", color=color, alpha=0.7)
+ax.axhline(0.5, color="gray", linestyle="--", alpha=0.5)
+ax.set_xlabel("Confidence Rating")
+ax.set_ylabel("Mean Accuracy")
+ax.set_title("Confidence Calibration by Condition")
+ax.set_ylim(0.45, 1.0)
+ax.legend(title="Boundary Type")
 
-ax.plot([0, 1], [0, 1], "k--", alpha=0.3, label="Chance")
-ax.set_xlabel("False Alarm Rate")
-ax.set_ylabel("Hit Rate")
-ax.set_title("Confidence-based ROC Curves by Condition")
-ax.legend()
-ax.set_xlim(0, 1)
-ax.set_ylim(0, 1)
+# Panel 2: By Target Type
+ax = axes[1]
+for tt, color, marker in [("EM", "#76B041", "o"), ("BB", "#F4A259", "s")]:
+    tt_trials = trials[(trials["target_type"] == tt) & trials["conf"].notna()].copy()
+    conf_levels = sorted(tt_trials["conf"].dropna().unique())
+    acc_means, acc_ses = [], []
+    for cl in conf_levels:
+        subset = tt_trials[tt_trials["conf"] == cl]
+        acc_means.append(subset["accuracy"].mean())
+        acc_ses.append(subset["accuracy"].std() / np.sqrt(len(subset)) if len(subset) > 1 else 0)
+    ax.errorbar(
+        conf_levels, acc_means, yerr=acc_ses,
+        marker=marker, markersize=9, linewidth=2, capsize=4,
+        color=color, label=f"{tt} ({'Event-Model' if tt == 'EM' else 'Boundary-Break'})",
+    )
+ax.axhline(0.5, color="gray", linestyle="--", alpha=0.5)
+ax.set_xlabel("Confidence Rating")
+ax.set_ylabel("Mean Accuracy")
+ax.set_title("Confidence Calibration by Target Type")
+ax.set_ylim(0.45, 1.0)
+ax.legend(title="Target Type")
+
 plt.tight_layout()
-plt.savefig(os.path.join(OUTPUT_DIR, "fig13_roc_curves.png"))
+plt.savefig(os.path.join(OUTPUT_DIR, "fig13_confidence_calibration.png"))
 plt.close()
-print("  Saved fig13_roc_curves.png")
+print("  Saved fig13_confidence_calibration.png")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SAVE UPDATED OUTPUTS
