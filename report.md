@@ -5,7 +5,7 @@ author:
   - Archit Choudhary (2023114002)
   - Bhavya Ahuja (2023111035)
   - Hrishiraj Mitra (2023111037)
-date: "April 23, 2026"
+date: "May 6, 2026"
 geometry: "margin=0.9in"
 fontsize: 12pt
 linestretch: 1
@@ -59,7 +59,7 @@ Based on the reviewed literature, we tested six hypotheses:
 
 ## Participants and Design
 
-A total of 171 participants were tested. One participant (sub42) was excluded due to missing recognition data, yielding a final sample of **170 participants** (81 AB, 89 NB). Demographic data were collected via an external survey for 185 registered participants, of whom 22 had completely missing demographics. For these participants, missing **age** was imputed with the sample **median** (22 years; chosen over the mean because of mild right-skew due to outliers), and missing categorical variables (**gender**, **handedness**, **vision**) were imputed with the **mode** of the respective distributions. In the final sample, participants had a mean age of 22.2 years ($SD$ = 2.0, range 19–28), and included 123 males and 47 females; 161 were right-handed and 9 left-handed; 94 reported normal vision, 74 corrected-to-normal, and 2 uncorrected vision difficulty.
+A total of **171** PsychoPy session files were located. One file (`sub42_NB_…`) lacked a `movie_id` column and could not be parsed for recognition trials, so that session was excluded, yielding **170 participants** (81 AB, 89 NB). Demographic data were collected via an external survey (**N** = 185 rows); **22** rows had missing age (and typically missing categorical fields) and were imputed as described below. For these participants, missing **age** was imputed with the sample **median** (22 years; chosen over the mean because of mild right-skew due to outliers), and missing categorical variables (**gender**, **handedness**, **vision**) were imputed with the **mode** of the respective distributions. In the final sample, participants had a mean age of 22.2 years ($SD$ = 2.0, range 19–28), and included 123 males and 47 females; 161 were right-handed and 9 left-handed; 94 reported normal vision, 74 corrected-to-normal, and 2 uncorrected vision difficulty.
 
 The experiment used a 2 (Boundary Type: AB vs. NB; between-subjects) $\times$ 2 (Target Type: EM vs. BB; within-subjects) mixed design, with 40 recognition trials per participant (20 EM, 20 BB), yielding **6,800 trials** total.
 
@@ -84,10 +84,10 @@ For each DV, we computed means and standard deviations per cell. Normality was a
 A 2 $\times$ 2 mixed ANOVA was conducted for each DV using the `pingouin` library in Python, with partial eta-squared ($\eta_p^2$) as effect size. Where normality was violated, non-parametric robustness checks were conducted: Mann-Whitney U for between-subjects effects, Wilcoxon signed-rank for within-subjects effects, and Mann-Whitney on difference scores for the interaction. Significant effects were followed up with $t$-tests and Cohen's $d$.
 
 ### Signal Detection Theory
-For the 2AFC task, discriminability was computed as $d' = z(\text{HR}) - z(\text{FAR})$, where HR is the hit rate (accuracy) and FAR = 1 $-$ HR. A log-linear correction (Hautus, 1995) was applied by adding 0.5 to hits and misses to avoid extreme proportions. Response criterion $c = -0.5 \times [z(\text{HR}) + z(\text{FAR})]$ was also computed. A 2 $\times$ 2 mixed ANOVA was conducted on $d'$.
+For each participant, hit rate HR was taken as mean accuracy on trials of a given target type; with two alternatives, false-alarm rate was defined as FAR = 1 $-$ HR at that level of aggregation. Discriminability was computed as $d' = z(\text{HR}) - z(\text{FAR})$ on the probit scale, with a log-linear correction (Hautus, 1995) adding 0.5 to counts before dividing by $n + 1$ to avoid infinite $z$-scores. This follows the same HR/FAR coding used in the analysis script; in a strict 2AFC formulation, response bias is not separately identified from these cell-wise rates (Macmillan & Creelman, 2005), so **only $d'$** was analysed and plotted. Overall $d'$ (NB vs. AB, averaged across target types within participant) was compared with an independent $t$-test (and Shapiro–Wilk guided checks). A 2 $\times$ 2 mixed ANOVA was also conducted on per-subject $d'$ by condition and target type.
 
 ### Mixed-Effects Models
-Linear mixed-effects models were fitted using `statsmodels` in Python with crossed random intercepts for subjects and items (movie IDs) to account for both subject-level and item-level variability. Fixed effects included condition (NB = 1, AB = 0), target type (EM = 1, BB = 0), and their interaction. Models were fitted via REML with L-BFGS optimization.
+Trial-level linear mixed models were fitted in Python using `statsmodels.MixedLM` (`statsmodels.formula.api.mixedlm`). Fixed effects were condition (NB = 1, AB = 0), target type (EM = 1, BB = 0), and their interaction. **Subject** random intercepts were always included; **movie** identity was additionally modelled as a variance component (`vc_formula`) where the optimiser returned a usable covariance structure. Printed summaries occasionally fell back to a **subject-only** random intercept when variance-component extraction failed numerically; fixed-effect estimates were materially similar across these specifications. Models used REML with L-BFGS. Figure 12 shows fixed effects and 95% confidence intervals from the subject-random-intercept accuracy model used for visualization.
 
 ### RT Interaction Analysis
 The near-significant RT interaction was investigated using simple effects analyses (paired $t$-tests within each condition, independent $t$-tests between conditions at each target type) and a Bayesian $t$-test on the difference scores (EM $-$ BB) between conditions to quantify evidence for or against the interaction.
@@ -116,9 +116,9 @@ The final dataset contained **6,800 trials** from 170 participants (81 AB, 89 NB
 
 **Descriptive pattern.** Accuracy was high (82–88%), well above chance. The NB group had numerically higher accuracy ($M$ = .871) than the AB group ($M$ = .840), consistent with H1. However, EM targets ($M$ = .870) were recognized better than BB targets ($M$ = .843), which is the *opposite* of H2's predicted boundary advantage.
 
-**Normality check.** Shapiro-Wilk tests indicated normality was violated in all four cells (all $p$ < .002). Levene's test confirmed homogeneity of variance ($p$ > .08). QQ plots (Figure 5) showed mild left-skew.
+**Normality check.** Shapiro-Wilk tests indicated normality was violated in all four cells (all $p$ < .002). Levene's test confirmed homogeneity of variance ($p$ > .08). QQ plots for each DV and design cell (`output/fig5_qq_plots.png`, generated by the analysis script) showed mild departures from Gaussian tails.
 
-![Mean recognition accuracy ($\pm$ 95% CI) by Boundary Type and Target Type. Dashed line = chance.](output/fig1_accuracy_barplot.png){width=48%}
+![Mean recognition accuracy ($\pm$ SE) by Boundary Type and Target Type. Points = individual subject means (jittered). Dashed line = chance.](output/fig1_accuracy_interaction.png){width=46%}
 
 **Parametric.** The mixed ANOVA revealed a significant main effect of Boundary Type, $F$(1, 168) = 7.247, $p$ = .008, $\eta_p^2$ = .041: the NB group ($M$ = .871) outperformed the AB group ($M$ = .840), $t$ = −2.692, $p$ = .008, $d$ = −0.413. **H1 was supported.** There was a significant main effect of Target Type, $F$(1, 168) = 11.438, $p$ < .001, $\eta_p^2$ = .064: EM targets were recognized better than BB targets, $t$ = 3.390, $p$ < .001, $d$ = 0.287. **H2 was not supported** — the effect was in the opposite direction, i.e., EM > BB. The interaction was not significant, $F$(1, 168) = 0.206, $p$ = .651, $\eta_p^2$ = .001. **H3 was not supported.**
 
@@ -132,7 +132,7 @@ The final dataset contained **6,800 trials** from 170 participants (81 AB, 89 NB
 
 **Parametric.** No significant main effects were found: Boundary Type $F$(1, 168) = 1.101, $p$ = .296; Target Type $F$(1, 168) = 1.158, $p$ = .284. The interaction approached significance, $F$(1, 168) = 3.358, $p$ = .069, $\eta_p^2$ = .020.
 
-![RT interaction: Boundary Type $\times$ Target Type ($\pm$ SE), with individual data points.](output/fig10_rt_interaction.png){width=48%}
+![RT interaction: Boundary Type $\times$ Target Type ($\pm$ SE), with individual data points.](output/fig10_rt_interaction.png){width=46%}
 
 **Simple effects (H4).** Within the AB group, EM targets were responded to significantly faster ($M$ = 5.45 s) than BB targets ($M$ = 5.66 s), $t$ = −2.560, $p$ = .012, $d$ = −0.145. Within the NB group, there was no RT difference ($t$ = 0.424, $p$ = .673). This pattern is consistent with H4: abrupt boundaries selectively slow responses for BB targets.
 
@@ -144,38 +144,38 @@ The final dataset contained **6,800 trials** from 170 participants (81 AB, 89 NB
 
 Simple effects: within the AB group, confidence was higher for EM ($M$ = 4.13) than BB ($M$ = 4.04), $t$ = 3.098, $p$ = .003, $d$ = 0.191; within the NB group, no difference ($t$ = 0.342, $p$ = .733). For BB targets, NB participants were more confident than AB participants ($t$ = −2.285, $p$ = .024, $d$ = −0.351); EM confidence did not differ ($p$ = .251).
 
-![Confidence interaction: Boundary Type $\times$ Target Type ($\pm$ SE).](output/fig7_confidence_interaction.png){width=48%}
+![Confidence interaction: Boundary Type $\times$ Target Type ($\pm$ SE).](output/fig7_confidence_interaction.png){width=46%}
 
 **Non-parametric.** Wilcoxon confirmed Target Type ($W$ = 4990.5, $p$ = .025) and Mann-Whitney confirmed the interaction ($U$ = 4323.0, $p$ = .025).
 
 ## Signal Detection Theory (H5)
 
-**Table 2.** SDT parameters ($M \pm SD$) by Condition and Target Type.
+**Table 2.** Discriminability $d'$ ($M \pm SD$) by Condition and Target Type (log-linear corrected HR/FAR as in Methods).
 
-| Condition | Target | $d'$ | $c$ |
-|:---------:|:------:|:----:|:---:|
-| AB | EM | 2.124 $\pm$ 0.803 | $\approx$ 0 |
-| AB | BB | 1.889 $\pm$ 0.833 | $\approx$ 0 |
-| NB | EM | 2.350 $\pm$ 0.744 | $\approx$ 0 |
-| NB | BB | 2.174 $\pm$ 0.832 | $\approx$ 0 |
+| Condition | Target | $d'$ |
+|:---------:|:------:|:----:|
+| AB | EM | 2.124 $\pm$ 0.803 |
+| AB | BB | 1.889 $\pm$ 0.833 |
+| NB | EM | 2.350 $\pm$ 0.744 |
+| NB | BB | 2.174 $\pm$ 0.832 |
 
-**H5 test.** An independent $t$-test on overall $d'$ confirmed that NB participants ($M$ = 2.262) had significantly higher discriminability than AB participants ($M$ = 2.006), $t$ = 2.546, $p$ = .012, $d$ = 0.391. **H5 was supported.** Response criterion $c$ did not differ between conditions ($t$ = −1.049, $p$ = .296), indicating that the groups did not differ in response bias.
+**H5 test.** An independent $t$-test on overall $d'$ (mean of EM and BB $d'$ within each participant) confirmed that NB participants ($M$ = 2.262) had significantly higher discriminability than AB participants ($M$ = 2.006), $t$ = 2.546, $p$ = .012, Cohen's $d$ = 0.391. **H5 was supported.** A separate response-bias parameter was not estimated in this 2AFC summary (see Methods).
 
-![Signal Detection: $d'$ and criterion $c$ by Condition and Target Type.](output/fig9_sdt_dprime.png){width=60%}
+![Signal Detection: $d'$ by Condition and Target Type ($\pm$ 95% CI).](output/fig9_sdt_dprime.png){width=52%}
 
 A 2 $\times$ 2 mixed ANOVA on $d'$ confirmed significant main effects of condition ($F$(1, 168) = 6.484, $p$ = .012, $\eta_p^2$ = .037) and target type ($F$(1, 168) = 8.201, $p$ = .005, $\eta_p^2$ = .047), with no interaction ($F$(1, 168) = 0.168, $p$ = .682). This indicates that NB participants had uniformly better discriminability, and EM targets were more discriminable than BB targets.
 
 ## Mixed-Effects Models
 
-Mixed-effects models with crossed random intercepts for subjects and items confirmed the ANOVA results while accounting for item-level variability.
+Trial-level mixed-effects models with subject random intercepts (and exploratory movie variance components; see Methods) reproduced the ANOVA pattern for accuracy and confidence.
 
-**Accuracy.** The condition effect was significant ($b$ = 0.036, $SE$ = 0.012, $z$ = 2.95, $p$ = .003): NB participants had 3.6 percentage points higher accuracy. The target type effect was significant ($b$ = 0.031, $SE$ = 0.012, $z$ = 2.51, $p$ = .012): EM targets had 3.1 percentage points higher accuracy. The interaction was not significant ($b$ = −0.007, $z$ = −0.43, $p$ = .669).
+**Accuracy.** The condition effect was significant ($b$ = 0.036, $SE$ = 0.012, $z$ = 2.95, $p$ = .003): NB participants had about 3.6 percentage points higher accuracy. The target type effect was significant ($b$ = 0.031, $SE$ = 0.012, $z$ = 2.51, $p$ = .012): EM targets had about 3.1 percentage points higher accuracy. The interaction was not significant ($b$ = −0.007, $z$ = −0.43, $p$ = .669).
 
-**RT.** No fixed effects reached significance (all $p$ > .11), though the interaction trended in the expected direction ($b$ = 0.253, $z$ = 1.40, $p$ = .163).
+**RT.** No fixed effects reached significance at $\alpha$ = .05 in the trial-level model (all $p$ > .11), though the interaction trended in the expected direction ($b$ = 0.253, $z$ = 1.40, $p$ = .163).
 
 **Confidence.** Condition was significant ($b$ = 0.161, $z$ = 6.89, $p$ < .001) and target type was significant ($b$ = 0.091, $z$ = 2.89, $p$ = .004). The interaction was marginal ($b$ = −0.081, $z$ = −1.59, $p$ = .112).
 
-![Mixed-effects model: fixed effects on accuracy with 95% CI.](output/fig12_mixed_effects_forest.png){width=48%}
+![Mixed-effects model (subject random intercept): fixed effects on accuracy with 95% CI.](output/fig12_mixed_effects_forest.png){width=44%}
 
 ## Demographic Moderation (H6)
 
@@ -189,7 +189,7 @@ Mixed-effects models with crossed random intercepts for subjects and items confi
 
 **H6 was partially supported:** age correlated negatively with accuracy, and gender showed a marginal effect, but demographics did not significantly moderate the primary experimental effects after ANCOVA.
 
-![Demographic distributions by condition.](output/fig11_demographics.png){width=70%}
+![Demographic distributions by condition.](output/fig11_demographics.png){width=62%}
 
 ## Correlations Between DVs
 
@@ -201,7 +201,7 @@ Spearman correlations revealed that accuracy and confidence were positively corr
 
 | Hypothesis | Prediction | Result | Support |
 |:-----------|:-----------|:-------|:-------:|
-| H1 | NB > AB in accuracy | NB > AB, $p$ = .008, $d$ = 0.41 | **Supported** |
+| H1 | NB > AB in accuracy | NB > AB, $p$ = .008, $|d|$ = 0.41 | **Supported** |
 | H2 | BB > EM (boundary advantage) | EM > BB, $p$ < .001 | **Not supported** |
 | H3 | Interaction on accuracy | $p$ = .651 | **Not supported** |
 | H4 | RT interaction (AB: BB slower) | AB: BB > EM, $p$ = .012; NB: n.s. | **Partially supported** |
@@ -212,7 +212,7 @@ Spearman correlations revealed that accuracy and confidence were positively corr
 
 ## Summary
 
-This analysis yielded several key findings. First, **natural event segmentation preserves memory**: NB participants showed significantly higher accuracy ($d$ = 0.41) and discriminability ($d'$: $d$ = 0.39) than AB participants, supporting H1 and H5 and corroborating EST's prediction that smooth, natural boundaries facilitate encoding (Zacks et al., 2007). The SDT analysis confirmed this advantage reflects genuine discriminability rather than response bias, as criterion $c$ did not differ between groups.
+This analysis yielded several key findings. First, **natural event segmentation preserves memory**: NB participants showed significantly higher accuracy (Cohen's $d$ = 0.41 for the group contrast) and higher $d'$ (Cohen's $d$ = 0.39) than AB participants, supporting H1 and H5 and corroborating EST's prediction that smooth, natural boundaries facilitate encoding (Zacks et al., 2007). The SDT analysis shows the NB advantage in terms of **discriminability** under the HR/FAR coding used here; response bias was not parameterized separately in this 2AFC summary (Macmillan & Creelman, 2005).
 
 Second, **the predicted boundary advantage (H2) was not observed**. Rather than BB targets being easier to recognize, EM targets were consistently recognized better — the opposite pattern. This divergence from Radvansky and Zacks (2017) may reflect the specific nature of the abrupt-cut manipulation: whereas natural boundaries anchor memory (Swallow et al., 2009), the artificially disrupted boundaries in this experiment may have degraded the encoding quality of boundary-adjacent content. This finding adds nuance to the boundary advantage literature by suggesting that the advantage depends on boundary integrity.
 
@@ -220,7 +220,7 @@ Third, **abrupt boundaries selectively impair metacognitive certainty for bounda
 
 Fourth, the **RT interaction (H4)** revealed that AB participants showed significantly slower responses for BB targets compared to EM targets ($d$ = −0.145), whereas NB participants showed no such difference. Although the omnibus interaction was only marginally significant ($p$ = .069), the simple effects were clear, and the Bayesian analysis yielded anecdotal evidence (BF$_{10}$ = 0.78), leaving this as a suggestive finding.
 
-Fifth, **mixed-effects models** with crossed random effects for subjects and items confirmed that the boundary type and target type effects on accuracy are robust to item-level variability. The item-level random intercept captured meaningful variance, validating the use of mixed-effects modelling.
+Fifth, **mixed-effects models** at the trial level with subject random intercepts (and exploratory movie variance components) supported the same pattern of fixed effects as the repeated-measures ANOVAs on subject means, indicating the findings are not an artefact of aggregating trials before inference.
 
 Sixth, **age was negatively correlated with accuracy** ($\rho$ = −0.203, $p$ = .008), and gender showed a marginal effect, with females performing slightly better. However, demographic variables did not moderate the primary experimental effects, and the ANCOVA confirmed that the boundary type effect survives covariate adjustment.
 
@@ -254,13 +254,13 @@ Zacks, J. M., Speer, N. K., Swallow, K. M., Braver, T. S., & Reynolds, J. R. (20
 
 # Contribution
 
-All team members contributed equally to this report.
+Hypothesis lead authorship (primary drafting and analysis for the listed hypotheses); all members edited the full manuscript and verified results against `analysis.py` and `output/`.
 
-| Member | Contribution |
-|:-------|:-------------|
-| Archit Choudhary (2023114002) | Data extraction, statistical analysis, SDT and mixed-effects modelling |
-| Bhavya Ahuja (2023111035) | Literature review, hypothesis development, introduction and methods writing |
-| Hrishiraj Mitra (2023111037) | Visualization, demographic analysis, report formatting, conclusions |
+| Hypotheses | Lead |
+|:-----------|:-----|
+| H2 (boundary advantage on accuracy), H6 (demographic moderation) | Archit Choudhary (2023114002) |
+| H1 (boundary type on accuracy), H3 (accuracy interaction) | Hrishiraj Mitra (2023111037) |
+| H4 (RT interaction), H5 (SDT / $d'$) | Bhavya Ahuja (2023111035) |
 
 ---
 

@@ -1087,8 +1087,13 @@ for dv, dv_label in [("accuracy", "Accuracy"), ("rt", "RT"), ("conf", "Confidenc
                 p = result.pvalues[param]
                 print(f"    {param}: b = {coef:.4f}, SE = {se:.4f}, z = {z:.3f}, p = {p:.4f}")
 
-        # Random effects variance
-        print(f"    Subject RE variance: {result.cov_re.iloc[0, 0]:.4f}")
+        # Random effects variance (shape differs when variance components are used)
+        try:
+            cre = result.cov_re
+            if cre is not None and getattr(cre, "size", 0) > 0:
+                print(f"    Subject RE variance: {float(np.asarray(cre).ravel()[0]):.4f}")
+        except Exception:
+            print("    Subject RE variance: (not extracted)")
 
     except Exception as e:
         print(f"    Model failed: {e}")
